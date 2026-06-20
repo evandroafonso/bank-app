@@ -1,0 +1,11 @@
+**/target/
+**/.mvn/
+**/build/
+**/.idea/
+**/*.iml
+**/bin/
+.DS_Store
+
+# Se usar banco de dados local por arquivo (como H2 ou SQLite)
+**/db/*.db
+**/db/*.mv.db
