@@ -5,9 +5,11 @@ import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.entity.Account;
 import com.assignment.bank.account.mapper.AccountMapper;
 import com.assignment.bank.account.repository.AccountRepository;
+import com.assignment.bank.exception.NotFoundException;
 import com.assignment.bank.user.entity.User;
 import com.assignment.bank.user.service.UserService;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,7 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.List;
 
+@Slf4j
 @Service
 public class AccountService {
 
@@ -76,4 +80,18 @@ public class AccountService {
 
         return countryCode + checkDigitsStr + bban;
     }
+
+    public List<AccountResponse> findAll() {
+        List<Account> accounts = accountRepository.findAll();
+        return accounts.stream()
+                .map(accountMapper::mapToResponse)
+                .toList();
+    }
+
+    public AccountResponse findByIBAN(String IBAN) {
+        Account account = accountRepository.findByIBAN(IBAN)
+                .orElseThrow(() -> new NotFoundException("Account not found with IBAN: " + IBAN));
+        return accountMapper.mapToResponse(account);
+    }
+
 }

@@ -19,8 +19,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -59,7 +62,7 @@ class AccountControllerTest {
                 .user(null)
                 .build();
 
-        Mockito.when(accountService.save(any(AccountRequest.class))).thenReturn(response);
+        when(accountService.save(any(AccountRequest.class))).thenReturn(response);
 
         mockMvc.perform(post("/api/accounts/create")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -70,7 +73,7 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.currency").value("EUR"))
                 .andExpect(jsonPath("$.balance").value("2.3212"));
 
-        Mockito.verify(accountService, Mockito.times(1)).save(any(AccountRequest.class));
+        verify(accountService, Mockito.times(1)).save(any(AccountRequest.class));
     }
 
     @Test
@@ -79,4 +82,68 @@ class AccountControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void shouldFindAllAccountsSuccessfully() throws Exception {
+        AccountResponse response = AccountResponse.builder()
+                .IBAN("EE12345678901234")
+                .currency("EUR")
+                .balance(BigDecimal.ZERO)
+                .build();
+
+        when(accountService.findAll()).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].IBAN").value("EE12345678901234"));
+
+        verify(accountService, times(1)).findAll();
+    }
+
+    @Test
+    void shouldFindByIBANSuccessfully() throws Exception {
+        String iban = "EE12345678901234";
+        AccountResponse response = AccountResponse.builder()
+                .IBAN(iban)
+                .currency("EUR")
+                .balance(BigDecimal.TEN)
+                .build();
+
+        when(accountService.findByIBAN(iban)).thenReturn(response);
+
+        mockMvc.perform(get("/api/accounts/{IBAN}", iban)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.IBAN").value(iban))
+                .andExpect(jsonPath("$.currency").value("EUR"));
+
+        verify(accountService, times(1)).findByIBAN(iban);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenIBANDoesNotExist() throws Exception {
+        String iban = "NON-EXISTENT";
+
+        when(accountService.findByIBAN(iban))
+                .thenThrow(new com.assignment.bank.exception.NotFoundException("Account not found"));
+
+        mockMvc.perform(get("/api/accounts/{IBAN}", iban)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+        verify(accountService, times(1)).findByIBAN(iban);
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoAccountsExist() throws Exception {
+        when(accountService.findAll()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+
+        verify(accountService, times(1)).findAll();
+    }
+
 }
