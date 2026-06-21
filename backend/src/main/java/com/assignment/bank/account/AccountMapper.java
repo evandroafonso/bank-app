@@ -1,0 +1,30 @@
+package com.assignment.bank.account;
+
+import com.assignment.bank.account.dto.AccountResponse;
+import com.assignment.bank.account.entity.Account;
+import com.assignment.bank.user.mapper.UserMapper;
+import org.springframework.stereotype.Component;
+
+@Component
+public class AccountMapper {
+
+    private final UserMapper userMapper;
+
+    public AccountMapper(UserMapper userMapper) {
+        this.userMapper = userMapper;
+    }
+
+    public AccountResponse mapToResponse(Account account) {
+        if (account == null) {
+            return null;
+        }
+
+        return AccountResponse.builder()
+                .uuid(account.getUuid().toString())
+                .IBAN(account.getIBAN())
+                .currency(account.getCurrency().toString())
+                .balance(account.getBalance())
+                .user(userMapper.mapToResponse(account.getOwner()))
+                .build();
+    }
+}

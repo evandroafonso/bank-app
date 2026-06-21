@@ -1,6 +1,8 @@
 package com.assignment.bank.account.service;
 
+import com.assignment.bank.account.AccountMapper;
 import com.assignment.bank.account.dto.AccountRequest;
+import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.entity.Account;
 import com.assignment.bank.account.repository.AccountRepository;
 import com.assignment.bank.user.entity.User;
@@ -20,22 +22,24 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final UserService userService;
+    private final AccountMapper accountMapper;
 
-    public AccountService(AccountRepository accountRepository, UserService userService) {
+    public AccountService(AccountRepository accountRepository, UserService userService, AccountMapper accountMapper) {
         this.accountRepository = accountRepository;
         this.userService = userService;
+        this.accountMapper = accountMapper;
     }
 
     @Transactional
-    public Account save(AccountRequest accountRequest) {
+    public AccountResponse save(AccountRequest accountRequest) {
         User loggedUser = getAuthenticatedUser();
 
         Account account = new Account();
         account.setIBAN(generateIban());
         account.setOwner(loggedUser);
         account.setCurrency(accountRequest.currency());
-
-        return accountRepository.save(account);
+        accountRepository.save(account);
+        return accountMapper.mapToResponse(account);
     }
 
     private User getAuthenticatedUser() {
