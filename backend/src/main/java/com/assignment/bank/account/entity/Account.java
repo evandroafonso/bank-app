@@ -5,10 +5,7 @@ import com.assignment.bank.common.entity.BaseEntity;
 import com.assignment.bank.transaction.entity.Transaction;
 import com.assignment.bank.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
@@ -30,6 +27,7 @@ public class Account extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Currency currency;
 
+    @Builder.Default
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal balance = BigDecimal.ZERO;
 
@@ -37,6 +35,7 @@ public class Account extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User owner;
 
+    @Builder.Default
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaction> transactions = new ArrayList<>();
 }
