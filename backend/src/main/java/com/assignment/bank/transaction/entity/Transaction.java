@@ -5,13 +5,17 @@ import com.assignment.bank.account.enums.Currency;
 import com.assignment.bank.common.entity.BaseEntity;
 import com.assignment.bank.transaction.enums.TransactionType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "transactions")
-@Builder
+@SuperBuilder
 @Getter
 @Setter
 @NoArgsConstructor

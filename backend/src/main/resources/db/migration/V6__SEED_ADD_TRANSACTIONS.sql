@@ -1,0 +1,16 @@
+INSERT INTO transactions (uuid,
+                          account_id,
+                          amount,
+                          type,
+                          currency,
+                          exchange_rate,
+                          description,
+                          created_at,
+                          updated_at)
+VALUES (RANDOM_UUID(), 1, 12.1400, 'CREDIT', 'EUR', 1.0000, 'Test transaction', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       (RANDOM_UUID(), 1, 14.9400, 'CREDIT', 'EUR', 1.0000, 'Test transaction', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       (RANDOM_UUID(), 1, 11.3420, 'CREDIT', 'EUR', 1.0000, 'Test transaction', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       (RANDOM_UUID(), 1, 2.3324, 'CREDIT', 'EUR', 1.0000, 'Test transaction', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       (RANDOM_UUID(), 1, 13.8400, 'CREDIT', 'EUR', 1.0000, 'Test transaction', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       (RANDOM_UUID(), 1, 17.7700, 'CREDIT', 'EUR', 1.0000, 'Test transaction', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+       (RANDOM_UUID(), 1, 18.4400, 'CREDIT', 'EUR', 1.0000, 'Test transaction', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
