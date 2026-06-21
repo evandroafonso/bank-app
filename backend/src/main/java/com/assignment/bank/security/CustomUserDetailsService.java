@@ -3,6 +3,7 @@ package com.assignment.bank.security;
 import com.assignment.bank.user.entity.User;
 import com.assignment.bank.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,7 +16,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository repository;
 
     @Override
-    public UserDetails loadUserByUsername(String email)
+    public UserDetails loadUserByUsername(@NonNull String email)
             throws UsernameNotFoundException {
 
         User user = repository.findByEmail(email)
