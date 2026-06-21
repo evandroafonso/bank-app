@@ -172,4 +172,35 @@ class UserServiceTest {
         verify(userRepository).findByPersonalId(personalId);
         verifyNoInteractions(userMapper);
     }
+
+    @Test
+    void shouldReturnUserWhenEmailExists() {
+        String email = "john@email.com";
+        User user = mock(User.class);
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(java.util.Optional.of(user));
+
+        User result = userService.findByEmail(email);
+
+        assertNotNull(result);
+        assertEquals(user, result);
+
+        verify(userRepository).findByEmail(email);
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenUserDoesNotExistByEmail() {
+        String email = "unknown@email.com";
+
+        when(userRepository.findByEmail(email))
+                .thenReturn(java.util.Optional.empty());
+
+        assertThrows(
+                com.assignment.bank.exception.NotFoundException.class,
+                () -> userService.findByEmail(email)
+        );
+
+        verify(userRepository).findByEmail(email);
+    }
 }
