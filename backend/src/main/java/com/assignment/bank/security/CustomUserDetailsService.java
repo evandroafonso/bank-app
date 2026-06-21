@@ -1,7 +1,7 @@
 package com.assignment.bank.security;
 
 import com.assignment.bank.user.entity.User;
-import com.assignment.bank.user.repositories.UserRepository;
+import com.assignment.bank.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

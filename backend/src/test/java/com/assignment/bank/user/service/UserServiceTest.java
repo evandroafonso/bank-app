@@ -4,7 +4,7 @@ import com.assignment.bank.user.dto.UserRequest;
 import com.assignment.bank.user.dto.UserResponse;
 import com.assignment.bank.user.entity.User;
 import com.assignment.bank.user.mapper.UserMapper;
-import com.assignment.bank.user.repositories.UserRepository;
+import com.assignment.bank.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

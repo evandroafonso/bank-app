@@ -5,7 +5,7 @@ import com.assignment.bank.user.dto.UserRequest;
 import com.assignment.bank.user.dto.UserResponse;
 import com.assignment.bank.user.entity.User;
 import com.assignment.bank.user.mapper.UserMapper;
-import com.assignment.bank.user.repositories.UserRepository;
+import com.assignment.bank.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,4 +34,9 @@ public class UserService {
         return userMapper.mapToResponse(user);
     }
 
+    public User findByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        return user;
+    }
 }

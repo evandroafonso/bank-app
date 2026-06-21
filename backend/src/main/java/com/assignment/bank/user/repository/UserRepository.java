@@ -1,4 +1,4 @@
-package com.assignment.bank.user.repositories;
+package com.assignment.bank.user.repository;
 
 import com.assignment.bank.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

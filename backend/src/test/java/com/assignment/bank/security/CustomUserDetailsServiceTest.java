@@ -1,7 +1,7 @@
 package com.assignment.bank.security;
 
 import com.assignment.bank.user.entity.User;
-import com.assignment.bank.user.repositories.UserRepository;
+import com.assignment.bank.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
