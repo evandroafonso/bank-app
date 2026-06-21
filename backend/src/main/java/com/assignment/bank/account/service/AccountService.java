@@ -1,9 +1,9 @@
 package com.assignment.bank.account.service;
 
-import com.assignment.bank.account.AccountMapper;
 import com.assignment.bank.account.dto.AccountRequest;
 import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.entity.Account;
+import com.assignment.bank.account.mapper.AccountMapper;
 import com.assignment.bank.account.repository.AccountRepository;
 import com.assignment.bank.user.entity.User;
 import com.assignment.bank.user.service.UserService;

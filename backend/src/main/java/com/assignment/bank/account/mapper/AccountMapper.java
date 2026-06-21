@@ -1,4 +1,4 @@
-package com.assignment.bank.account;
+package com.assignment.bank.account.mapper;
 
 import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.entity.Account;
