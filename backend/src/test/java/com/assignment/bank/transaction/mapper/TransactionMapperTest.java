@@ -30,30 +30,59 @@ class TransactionMapperTest {
                 .balance(new BigDecimal("1000.00"))
                 .build();
 
-        TransactionRequest request = new TransactionRequest("EE1234567890", new BigDecimal("100.00"), "Payment");
+        TransactionRequest request = new TransactionRequest(
+                "EE1234567890",
+                new BigDecimal("100.00"),
+                Currency.EUR,
+                "Payment"
+        );
 
-        Transaction transaction = transactionMapper.mapToEntity(request, account);
+        BigDecimal convertedAmount = new BigDecimal("100.00");
+        BigDecimal balanceAfter = new BigDecimal("1100.00");
+        BigDecimal exchangeRate = BigDecimal.ONE;
+
+        Transaction transaction = transactionMapper.mapToEntity(
+                request,
+                account,
+                TransactionType.CREDIT,
+                balanceAfter,
+                convertedAmount,
+                exchangeRate
+        );
 
         assertNotNull(transaction);
         assertEquals(account, transaction.getAccount());
-        assertEquals(new BigDecimal("100.00"), transaction.getAmount());
+        assertEquals(new BigDecimal("100.00"), transaction.getSourceAmount());
+        assertEquals(convertedAmount, transaction.getConvertedAmount());
+        assertEquals(exchangeRate, transaction.getExchangeRate());
+        assertEquals(balanceAfter, transaction.getBalanceAfter());
         assertEquals(TransactionType.CREDIT, transaction.getType());
-        assertEquals(Currency.EUR, transaction.getCurrency());
+        assertEquals(Currency.EUR, transaction.getSourceCurrency());
+        assertEquals(Currency.EUR, transaction.getTargetCurrency());
         assertEquals("Payment", transaction.getDescription());
-        assertEquals(BigDecimal.ONE, transaction.getExchangeRate());
     }
 
     @Test
     void shouldMapTransactionEntityToResponseCorrectly() {
         UUID txUuid = UUID.randomUUID();
-        Account account = Account.builder().balance(new BigDecimal("1100.00")).build();
+
+        Account account = Account.builder()
+                .currency(Currency.USD)
+                .balance(new BigDecimal("1100.00"))
+                .build();
+
         LocalDateTime now = LocalDateTime.now();
 
         Transaction transaction = Transaction.builder()
                 .uuid(txUuid)
-                .amount(new BigDecimal("100.00"))
+                .sourceAmount(new BigDecimal("100.00"))
+                .convertedAmount(new BigDecimal("117.00"))
+                .exchangeRate(new BigDecimal("1.17"))
                 .account(account)
-                .currency(Currency.EUR)
+                .sourceCurrency(Currency.EUR)
+                .targetCurrency(Currency.USD)
+                .balanceAfter(new BigDecimal("1100.00"))
+                .type(TransactionType.CREDIT)
                 .description("Payment")
                 .createdAt(now)
                 .build();
@@ -62,16 +91,20 @@ class TransactionMapperTest {
 
         assertNotNull(response);
         assertEquals(txUuid.toString(), response.uuid());
-        assertEquals(new BigDecimal("100.00"), response.amount());
+        assertEquals(new BigDecimal("100.00"), response.sourceAmount());
+        assertEquals(new BigDecimal("117.00"), response.convertedAmount());
+        assertEquals(new BigDecimal("1.17"), response.exchangeRate());
         assertEquals(new BigDecimal("1100.00"), response.balance());
         assertEquals(Currency.EUR, response.currency());
+        assertEquals(Currency.USD, response.targetCurrency());
+        assertEquals(TransactionType.CREDIT, response.type());
         assertEquals("Payment", response.description());
         assertEquals(now, response.timestamp());
     }
 
     @Test
     void shouldReturnNullWhenMappingToEntityWithNullInputs() {
-        assertNull(transactionMapper.mapToEntity(null, null));
+        assertNull(transactionMapper.mapToEntity(null, null, null, null, null, null));
     }
 
     @Test

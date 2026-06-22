@@ -1,8 +1,10 @@
 package com.assignment.bank.transaction.controller;
 
+import com.assignment.bank.account.enums.Currency;
 import com.assignment.bank.security.JwtService;
 import com.assignment.bank.transaction.dto.TransactionRequest;
 import com.assignment.bank.transaction.dto.TransactionResponse;
+import com.assignment.bank.transaction.enums.TransactionType;
 import com.assignment.bank.transaction.service.TransactionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,11 +52,22 @@ class TransactionControllerTest {
 
     @Test
     void shouldCreditAccountSuccessfully() throws Exception {
-        TransactionRequest request = new TransactionRequest("EE12345678901234", new BigDecimal("100.00"), "Deposit test");
+        TransactionRequest request = new TransactionRequest(
+                "EE12345678901234",
+                new BigDecimal("100.00"),
+                Currency.EUR,
+                "Deposit test"
+        );
+
         TransactionResponse response = TransactionResponse.builder()
                 .uuid("f268a8bc-e3fd-4397-a429-1af09ce1ba88")
-                .amount(new BigDecimal("100.00"))
+                .sourceAmount(new BigDecimal("100.00"))
+                .convertedAmount(new BigDecimal("100.00"))
+                .exchangeRate(BigDecimal.ONE)
+                .currency(Currency.EUR)
+                .targetCurrency(Currency.EUR)
                 .balance(new BigDecimal("1100.00"))
+                .type(TransactionType.CREDIT)
                 .description("Deposit test")
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -66,10 +79,48 @@ class TransactionControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.uuid").value("f268a8bc-e3fd-4397-a429-1af09ce1ba88"))
-                .andExpect(jsonPath("$.amount").value(100.00))
-                .andExpect(jsonPath("$.balance").value(1100.00));
+                .andExpect(jsonPath("$.sourceAmount").value(100.00))
+                .andExpect(jsonPath("$.balance").value(1100.00))
+                .andExpect(jsonPath("$.type").value("CREDIT"))
+                .andExpect(jsonPath("$.currency").value("EUR"));
 
         verify(transactionService, times(1)).credit(any(TransactionRequest.class));
+    }
+
+    @Test
+    void shouldDebitAccountSuccessfully() throws Exception {
+        TransactionRequest request = new TransactionRequest(
+                "EE12345678901234",
+                new BigDecimal("50.00"),
+                Currency.EUR,
+                "Withdrawal test"
+        );
+
+        TransactionResponse response = TransactionResponse.builder()
+                .uuid("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+                .sourceAmount(new BigDecimal("50.00"))
+                .convertedAmount(new BigDecimal("50.00"))
+                .exchangeRate(BigDecimal.ONE)
+                .currency(Currency.EUR)
+                .targetCurrency(Currency.EUR)
+                .balance(new BigDecimal("950.00"))
+                .type(TransactionType.DEBIT)
+                .description("Withdrawal test")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        when(transactionService.debit(any(TransactionRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/api/transactions/debit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.uuid").value("a1b2c3d4-e5f6-7890-abcd-ef1234567890"))
+                .andExpect(jsonPath("$.sourceAmount").value(50.00))
+                .andExpect(jsonPath("$.balance").value(950.00))
+                .andExpect(jsonPath("$.type").value("DEBIT"));
+
+        verify(transactionService, times(1)).debit(any(TransactionRequest.class));
     }
 
     @Test

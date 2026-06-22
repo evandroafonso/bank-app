@@ -1,11 +1,14 @@
 package com.assignment.bank.transaction.service;
 
 import com.assignment.bank.account.entity.Account;
+import com.assignment.bank.account.enums.Currency;
 import com.assignment.bank.account.repository.AccountRepository;
+import com.assignment.bank.exception.InsufficientBalanceException;
 import com.assignment.bank.exception.NotFoundException;
 import com.assignment.bank.transaction.dto.TransactionRequest;
 import com.assignment.bank.transaction.dto.TransactionResponse;
 import com.assignment.bank.transaction.entity.Transaction;
+import com.assignment.bank.transaction.enums.TransactionType;
 import com.assignment.bank.transaction.mapper.TransactionMapper;
 import com.assignment.bank.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
@@ -18,6 +21,8 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,37 +37,56 @@ class TransactionServiceTest {
     @Mock
     private TransactionMapper transactionMapper;
 
+    @Mock
+    private ExchangeRateProvider exchangeRateProvider;
+
     @InjectMocks
     private TransactionService transactionService;
 
     @Test
     void shouldCreditAccountSuccessfully() {
-        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("100.00"), "test");
-        Account account = Account.builder().balance(new BigDecimal("500.00")).build();
-        Transaction transaction = mock(Transaction.class);
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("100.00"), Currency.EUR, "test");
+        Account account = Account.builder().currency(Currency.EUR).balance(new BigDecimal("500.00")).build();
         Transaction savedTransaction = mock(Transaction.class);
         TransactionResponse response = mock(TransactionResponse.class);
 
         when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
-        when(accountRepository.save(account)).thenReturn(account);
-        when(transactionMapper.mapToEntity(request, account)).thenReturn(transaction);
-        when(transactionRepository.save(transaction)).thenReturn(savedTransaction);
+        when(transactionMapper.mapToEntity(eq(request), eq(account), eq(TransactionType.CREDIT), any(), any(), any())).thenReturn(mock(Transaction.class));
+        when(transactionRepository.save(any())).thenReturn(savedTransaction);
         when(transactionMapper.mapToResponse(savedTransaction)).thenReturn(response);
 
         TransactionResponse result = transactionService.credit(request);
 
         assertNotNull(result);
         assertEquals(new BigDecimal("600.00"), account.getBalance());
-
         verify(accountRepository).findByIban("EE382200221020145685");
-        verify(accountRepository).save(account);
-        verify(transactionRepository).save(transaction);
+        verify(transactionRepository).save(any());
         verify(transactionMapper).mapToResponse(savedTransaction);
     }
 
     @Test
-    void shouldThrowNotFoundExceptionWhenAccountDoesNotExist() {
-        TransactionRequest request = new TransactionRequest("INVALID", new BigDecimal("100.00"), "test");
+    void shouldCreditAccountWithCurrencyConversion() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("100.00"), Currency.USD, "test");
+        Account account = Account.builder().currency(Currency.EUR).balance(new BigDecimal("500.00")).build();
+        Transaction savedTransaction = mock(Transaction.class);
+        TransactionResponse response = mock(TransactionResponse.class);
+
+        when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
+        when(exchangeRateProvider.getRate(Currency.USD, Currency.EUR)).thenReturn(new BigDecimal("0.85"));
+        when(transactionMapper.mapToEntity(eq(request), eq(account), eq(TransactionType.CREDIT), any(), any(), eq(new BigDecimal("0.85")))).thenReturn(mock(Transaction.class));
+        when(transactionRepository.save(any())).thenReturn(savedTransaction);
+        when(transactionMapper.mapToResponse(savedTransaction)).thenReturn(response);
+
+        TransactionResponse result = transactionService.credit(request);
+
+        assertNotNull(result);
+        assertEquals(0, new BigDecimal("585.00").compareTo(account.getBalance()));
+        verify(exchangeRateProvider).getRate(Currency.USD, Currency.EUR);
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenAccountDoesNotExistOnCredit() {
+        TransactionRequest request = new TransactionRequest("INVALID", new BigDecimal("100.00"), Currency.EUR, "test");
 
         when(accountRepository.findByIban("INVALID")).thenReturn(Optional.empty());
 
@@ -74,16 +98,147 @@ class TransactionServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenMapperToEntityFails() {
-        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("100.00"), "test");
-        Account account = mock(Account.class);
+    void shouldThrowExceptionWhenMapperToEntityFailsOnCredit() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("100.00"), Currency.EUR, "test");
+        Account account = Account.builder().currency(Currency.EUR).balance(new BigDecimal("500.00")).build();
 
-        when(accountRepository.findByIban("EE123")).thenReturn(Optional.of(account));
-        when(accountRepository.save(any())).thenReturn(account);
-        when(transactionMapper.mapToEntity(any(), any())).thenThrow(new RuntimeException("Mapper error"));
+        when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
+        when(transactionMapper.mapToEntity(any(), any(), any(), any(), any(), any())).thenThrow(new RuntimeException("Mapper error"));
 
         assertThrows(RuntimeException.class, () -> transactionService.credit(request));
 
         verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldDebitAccountSuccessfully() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("100.00"), Currency.EUR, "test");
+        Account account = Account.builder().currency(Currency.EUR).balance(new BigDecimal("500.00")).build();
+        Transaction savedTransaction = mock(Transaction.class);
+        TransactionResponse response = mock(TransactionResponse.class);
+
+        when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
+        when(transactionMapper.mapToEntity(eq(request), eq(account), eq(TransactionType.DEBIT), any(), any(), any())).thenReturn(mock(Transaction.class));
+        when(transactionRepository.save(any())).thenReturn(savedTransaction);
+        when(transactionMapper.mapToResponse(savedTransaction)).thenReturn(response);
+
+        TransactionResponse result = transactionService.debit(request);
+
+        assertNotNull(result);
+        assertEquals(new BigDecimal("400.00"), account.getBalance());
+        verify(accountRepository).findByIban("EE382200221020145685");
+        verify(transactionRepository).save(any());
+        verify(transactionMapper).mapToResponse(savedTransaction);
+    }
+
+    @Test
+    void shouldDebitAccountWithCurrencyConversion() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("100.00"), Currency.USD, "test");
+        Account account = Account.builder().currency(Currency.EUR).balance(new BigDecimal("500.00")).build();
+        Transaction savedTransaction = mock(Transaction.class);
+        TransactionResponse response = mock(TransactionResponse.class);
+
+        when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
+        when(exchangeRateProvider.getRate(Currency.USD, Currency.EUR)).thenReturn(new BigDecimal("0.85"));
+        when(transactionMapper.mapToEntity(eq(request), eq(account), eq(TransactionType.DEBIT), any(), any(), eq(new BigDecimal("0.85")))).thenReturn(mock(Transaction.class));
+        when(transactionRepository.save(any())).thenReturn(savedTransaction);
+        when(transactionMapper.mapToResponse(savedTransaction)).thenReturn(response);
+
+        TransactionResponse result = transactionService.debit(request);
+
+        assertNotNull(result);
+        assertEquals(0, new BigDecimal("415.00").compareTo(account.getBalance()));
+        verify(exchangeRateProvider).getRate(Currency.USD, Currency.EUR);
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenAccountDoesNotExistOnDebit() {
+        TransactionRequest request = new TransactionRequest("INVALID", new BigDecimal("100.00"), Currency.EUR, "test");
+
+        when(accountRepository.findByIban("INVALID")).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> transactionService.debit(request));
+
+        verify(accountRepository).findByIban("INVALID");
+        verifyNoInteractions(transactionMapper);
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void shouldThrowInsufficientBalanceExceptionOnDebit() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("1000.00"), Currency.EUR, "test");
+        Account account = Account.builder().currency(Currency.EUR).balance(new BigDecimal("500.00")).build();
+
+        when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
+
+        assertThrows(InsufficientBalanceException.class, () -> transactionService.debit(request));
+
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void shouldThrowInsufficientBalanceWhenBalanceEqualsZeroOnDebit() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("0.0001"), Currency.EUR, "test");
+        Account account = Account.builder().currency(Currency.EUR).balance(BigDecimal.ZERO).build();
+
+        when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
+
+        assertThrows(InsufficientBalanceException.class, () -> transactionService.debit(request));
+
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAmountIsNullOnCredit() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", null, Currency.EUR, "test");
+
+        assertThrows(IllegalArgumentException.class, () -> transactionService.credit(request));
+
+        verifyNoInteractions(accountRepository);
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAmountIsZeroOnCredit() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", BigDecimal.ZERO, Currency.EUR, "test");
+
+        assertThrows(IllegalArgumentException.class, () -> transactionService.credit(request));
+
+        verifyNoInteractions(accountRepository);
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAmountIsNegativeOnCredit() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("-50.00"), Currency.EUR, "test");
+
+        assertThrows(IllegalArgumentException.class, () -> transactionService.credit(request));
+
+        verifyNoInteractions(accountRepository);
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAmountExceedsFourDecimalPlacesOnCredit() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("10.000001"), Currency.EUR, "test");
+
+        assertThrows(IllegalArgumentException.class, () -> transactionService.credit(request));
+
+        verifyNoInteractions(accountRepository);
+        verifyNoInteractions(transactionRepository);
+    }
+
+    @Test
+    void shouldAcceptAmountWithExactlyFourDecimalPlaces() {
+        TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("10.0001"), Currency.EUR, "test");
+        Account account = Account.builder().currency(Currency.EUR).balance(new BigDecimal("500.00")).build();
+        Transaction savedTransaction = mock(Transaction.class);
+
+        when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
+        when(transactionMapper.mapToEntity(any(), any(), any(), any(), any(), any())).thenReturn(mock(Transaction.class));
+        when(transactionRepository.save(any())).thenReturn(savedTransaction);
+        when(transactionMapper.mapToResponse(savedTransaction)).thenReturn(mock(TransactionResponse.class));
+
+        assertDoesNotThrow(() -> transactionService.credit(request));
     }
 }
