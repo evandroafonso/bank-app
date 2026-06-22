@@ -1,6 +1,7 @@
 package com.assignment.bank.exception.handler;
 
 import com.assignment.bank.exception.BusinessException;
+import com.assignment.bank.exception.InsufficientBalanceException;
 import com.assignment.bank.exception.NotFoundException;
 import com.assignment.bank.exception.model.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -82,5 +83,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("Invalid or missing request body");
+    }
+
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientBalance(InsufficientBalanceException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        "INSUFFICIENT_BALANCE",
+                        400,
+                        LocalDateTime.now()
+                ));
     }
 }

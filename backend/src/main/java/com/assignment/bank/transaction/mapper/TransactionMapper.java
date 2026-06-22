@@ -12,17 +12,27 @@ import java.math.BigDecimal;
 @Component
 public class TransactionMapper {
 
-    public Transaction mapToEntity(TransactionRequest request, Account account) {
+    public Transaction mapToEntity(
+            TransactionRequest request,
+            Account account,
+            TransactionType transactionType,
+            BigDecimal balanceAfter,
+            BigDecimal convertedAmount,
+            BigDecimal exchangeRate
+    ) {
         if (request == null || account == null) {
             return null;
         }
 
         return Transaction.builder()
                 .account(account)
-                .amount(request.amount())
-                .type(TransactionType.CREDIT)
-                .currency(account.getCurrency())
-                .exchangeRate(BigDecimal.ONE)
+                .sourceCurrency(request.currency())
+                .targetCurrency(account.getCurrency())
+                .sourceAmount(request.amount())
+                .convertedAmount(convertedAmount)
+                .exchangeRate(exchangeRate)
+                .balanceAfter(balanceAfter)
+                .type(transactionType)
                 .description(request.description())
                 .build();
     }
@@ -33,10 +43,14 @@ public class TransactionMapper {
         }
 
         return TransactionResponse.builder()
-                .transactionUuid(transaction.getUuid().toString())
-                .amount(transaction.getAmount())
-                .balance(transaction.getAccount().getBalance())
-                .currency(transaction.getCurrency())
+                .uuid(transaction.getUuid().toString())
+                .sourceAmount(transaction.getSourceAmount())
+                .convertedAmount(transaction.getConvertedAmount())
+                .exchangeRate(transaction.getExchangeRate())
+                .type(transaction.getType())
+                .currency(transaction.getSourceCurrency())
+                .targetCurrency(transaction.getTargetCurrency())
+                .balance(transaction.getBalanceAfter())
                 .description(transaction.getDescription())
                 .timestamp(transaction.getCreatedAt())
                 .build();

@@ -26,19 +26,30 @@ public class Transaction extends BaseEntity {
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
-    @Column(nullable = false, precision = 19, scale = 4)
-    private BigDecimal amount;
+    @Column(name = "source_currency", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Currency sourceCurrency;
+
+    @Column(name = "target_currency", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Currency targetCurrency;
+
+    @Column(name = "source_amount", nullable = false, precision = 19, scale = 4)
+    private BigDecimal sourceAmount;
+
+    @Column(name = "converted_amount", nullable = false, precision = 19, scale = 4)
+    private BigDecimal convertedAmount;
+
+    @Column(name = "exchange_rate", nullable = false, precision = 19, scale = 4)
+    private BigDecimal exchangeRate;
+
+    @Column(name = "balance_after", nullable = false, precision = 19, scale = 4)
+    private BigDecimal balanceAfter;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionType type;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Currency currency;
-
-    @Column(name = "exchange_rate", nullable = false, precision = 19, scale = 4)
-    private BigDecimal exchangeRate;
-
+    @Column(length = 255)
     private String description;
 }

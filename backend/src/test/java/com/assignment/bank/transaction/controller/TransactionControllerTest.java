@@ -52,7 +52,7 @@ class TransactionControllerTest {
     void shouldCreditAccountSuccessfully() throws Exception {
         TransactionRequest request = new TransactionRequest("EE12345678901234", new BigDecimal("100.00"), "Deposit test");
         TransactionResponse response = TransactionResponse.builder()
-                .transactionUuid("f268a8bc-e3fd-4397-a429-1af09ce1ba88")
+                .uuid("f268a8bc-e3fd-4397-a429-1af09ce1ba88")
                 .amount(new BigDecimal("100.00"))
                 .balance(new BigDecimal("1100.00"))
                 .description("Deposit test")
@@ -65,7 +65,7 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.transactionUuid").value("f268a8bc-e3fd-4397-a429-1af09ce1ba88"))
+                .andExpect(jsonPath("$.uuid").value("f268a8bc-e3fd-4397-a429-1af09ce1ba88"))
                 .andExpect(jsonPath("$.amount").value(100.00))
                 .andExpect(jsonPath("$.balance").value(1100.00));
 

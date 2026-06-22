@@ -61,7 +61,7 @@ class TransactionMapperTest {
         TransactionResponse response = transactionMapper.mapToResponse(transaction);
 
         assertNotNull(response);
-        assertEquals(txUuid.toString(), response.transactionUuid());
+        assertEquals(txUuid.toString(), response.uuid());
         assertEquals(new BigDecimal("100.00"), response.amount());
         assertEquals(new BigDecimal("1100.00"), response.balance());
         assertEquals(Currency.EUR, response.currency());

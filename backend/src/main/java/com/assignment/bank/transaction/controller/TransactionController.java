@@ -25,4 +25,10 @@ public class TransactionController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/debit")
+    public ResponseEntity<TransactionResponse> debit(@RequestBody TransactionRequest transactionRequest) {
+        TransactionResponse response = transactionService.debit(transactionRequest);
+        return ResponseEntity.ok(response);
+    }
+
 }

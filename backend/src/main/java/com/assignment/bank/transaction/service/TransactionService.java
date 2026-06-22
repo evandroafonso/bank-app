@@ -1,11 +1,14 @@
 package com.assignment.bank.transaction.service;
 
 import com.assignment.bank.account.entity.Account;
+import com.assignment.bank.account.enums.Currency;
 import com.assignment.bank.account.repository.AccountRepository;
+import com.assignment.bank.exception.InsufficientBalanceException;
 import com.assignment.bank.exception.NotFoundException;
 import com.assignment.bank.transaction.dto.TransactionRequest;
 import com.assignment.bank.transaction.dto.TransactionResponse;
 import com.assignment.bank.transaction.entity.Transaction;
+import com.assignment.bank.transaction.enums.TransactionType;
 import com.assignment.bank.transaction.mapper.TransactionMapper;
 import com.assignment.bank.transaction.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
@@ -20,27 +23,95 @@ public class TransactionService {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
-
-    public TransactionService(AccountRepository accountRepository, TransactionRepository transactionRepository, TransactionMapper transactionMapper) {
+    private final ExchangeRateProvider exchangeRateProvider;
+    
+    public TransactionService(AccountRepository accountRepository,
+                              TransactionRepository transactionRepository,
+                              TransactionMapper transactionMapper,
+                              ExchangeRateProvider exchangeRateProvider
+    ) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
+        this.exchangeRateProvider = exchangeRateProvider;
     }
 
     @Transactional
-    public TransactionResponse credit(TransactionRequest transactionRequest) {
-
-        Account account = creditAccount(transactionRequest.IBAN(), transactionRequest.amount());
-        Transaction transaction = transactionMapper.mapToEntity(transactionRequest, account);
-        Transaction savedTransaction = transactionRepository.save(transaction);
-
-        return transactionMapper.mapToResponse(savedTransaction);
+    public TransactionResponse credit(TransactionRequest request) {
+        return processTransaction(request, TransactionType.CREDIT);
     }
 
-    private @NonNull Account creditAccount(String IBAN, BigDecimal amount) {
-        Account account = accountRepository.findByIBAN(IBAN)
+    @Transactional
+    public TransactionResponse debit(TransactionRequest request) {
+        return processTransaction(request, TransactionType.DEBIT);
+    }
+
+    private TransactionResponse processTransaction(TransactionRequest request, TransactionType type) {
+        validateAmount(request.amount());
+
+        Account account = getAccount(request.IBAN());
+
+        BigDecimal exchangeRate = getExchangeRate(request.currency(), account.getCurrency());
+        BigDecimal convertedAmount = convert(request.amount(), exchangeRate);
+
+        if (type == TransactionType.DEBIT) {
+            validateSufficientBalance(account, convertedAmount);
+        }
+
+        BigDecimal newBalance = calculateNewBalance(account, convertedAmount, type);
+        updateAccountBalance(account, newBalance);
+
+        Transaction transaction = transactionMapper.mapToEntity(
+                request, account, type, newBalance, convertedAmount, exchangeRate
+        );
+
+        return transactionMapper.mapToResponse(transactionRepository.save(transaction));
+    }
+
+    private BigDecimal getExchangeRate(Currency source, Currency target) {
+        if (source == target) return BigDecimal.ONE;
+        return exchangeRateProvider.getRate(source, target);
+    }
+
+    private BigDecimal convert(BigDecimal amount, BigDecimal rate) {
+        return amount.multiply(rate);
+    }
+
+    private void validateSufficientBalance(Account account, BigDecimal amount) {
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientBalanceException("Insufficient balance");
+        }
+    }
+
+    private BigDecimal calculateNewBalance(Account account,
+                                           BigDecimal amount,
+                                           TransactionType type) {
+        return switch (type) {
+            case CREDIT -> account.getBalance().add(amount);
+            case DEBIT -> account.getBalance().subtract(amount);
+        };
+    }
+
+    private void updateAccountBalance(Account account, BigDecimal newBalance) {
+        account.setBalance(newBalance);
+    }
+
+    private @NonNull Account getAccount(String IBAN) {
+        return accountRepository.findByIBAN(IBAN)
                 .orElseThrow(() -> new NotFoundException("Account with IBAN " + IBAN + " not found"));
-        account.setBalance(account.getBalance().add(amount));
-        return accountRepository.save(account);
+    }
+
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null) {
+            throw new IllegalArgumentException("Amount cannot be null");
+        }
+
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+
+        if (amount.scale() > 4) {
+            throw new IllegalArgumentException("Amount cannot have more than 4 decimal places");
+        }
     }
 }
