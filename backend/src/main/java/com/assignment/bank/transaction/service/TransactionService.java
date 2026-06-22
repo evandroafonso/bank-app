@@ -15,6 +15,8 @@ import com.assignment.bank.transaction.mapper.TransactionMapper;
 import com.assignment.bank.transaction.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -136,5 +138,11 @@ public class TransactionService {
         if (amount.scale() > 4) {
             throw new IllegalArgumentException("Amount cannot have more than 4 decimal places");
         }
+    }
+
+    public Page<TransactionResponse> getHistory(String iban, Pageable pageable) {
+        Account account = getAccount(iban);
+        return transactionRepository.findByAccountOrderByCreatedAtDesc(account, pageable)
+                .map(transactionMapper::mapToResponse);
     }
 }
