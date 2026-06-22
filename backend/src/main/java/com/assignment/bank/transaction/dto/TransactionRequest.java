@@ -17,9 +17,7 @@ public record TransactionRequest(
         @Digits(integer = 15, fraction = 4)
         BigDecimal amount,
 
-        @NotNull
         Currency currency,
-
         String description
 ) {
 }

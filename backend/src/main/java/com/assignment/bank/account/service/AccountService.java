@@ -6,14 +6,10 @@ import com.assignment.bank.account.entity.Account;
 import com.assignment.bank.account.mapper.AccountMapper;
 import com.assignment.bank.account.repository.AccountRepository;
 import com.assignment.bank.exception.NotFoundException;
+import com.assignment.bank.security.AuthenticatedUserProvider;
 import com.assignment.bank.user.entity.User;
-import com.assignment.bank.user.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
@@ -25,18 +21,20 @@ import java.util.List;
 public class AccountService {
 
     private final AccountRepository accountRepository;
-    private final UserService userService;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
     private final AccountMapper accountMapper;
 
-    public AccountService(AccountRepository accountRepository, UserService userService, AccountMapper accountMapper) {
+    public AccountService(AccountRepository accountRepository,
+                          AuthenticatedUserProvider authenticatedUserProvider,
+                          AccountMapper accountMapper) {
         this.accountRepository = accountRepository;
-        this.userService = userService;
+        this.authenticatedUserProvider = authenticatedUserProvider;
         this.accountMapper = accountMapper;
     }
 
     @Transactional
     public AccountResponse save(AccountRequest accountRequest) {
-        User loggedUser = getAuthenticatedUser();
+        User loggedUser = authenticatedUserProvider.get();
 
         Account account = new Account();
         account.setIban(generateIban());
@@ -44,20 +42,6 @@ public class AccountService {
         account.setCurrency(accountRequest.currency());
         accountRepository.save(account);
         return accountMapper.mapToResponse(account);
-    }
-
-    private User getAuthenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
-            throw new AuthenticationCredentialsNotFoundException("User not authenticated or security context missing.");
-        }
-
-        if (authentication.getPrincipal() instanceof UserDetails userDetails) {
-            return userService.findByEmail(userDetails.getUsername());
-        }
-
-        throw new IllegalStateException("The principal is not an instance of UserDetails.");
     }
 
     private String generateIban() {
@@ -82,15 +66,18 @@ public class AccountService {
     }
 
     public List<AccountResponse> findAll() {
-        List<Account> accounts = accountRepository.findAll();
+        User loggedUser = authenticatedUserProvider.get();
+
+        List<Account> accounts = accountRepository.findByOwner(loggedUser);
         return accounts.stream()
                 .map(accountMapper::mapToResponse)
                 .toList();
     }
 
-    public AccountResponse findByIban(String IBAN) {
-        Account account = accountRepository.findByIban(IBAN)
-                .orElseThrow(() -> new NotFoundException("Account not found with iban: " + IBAN));
+    public AccountResponse findByIban(String iban) {
+        User loggedUser = authenticatedUserProvider.get();
+        Account account = accountRepository.findByIbanAndOwner(iban, loggedUser)
+                .orElseThrow(() -> new NotFoundException("Account not found with iban: " + iban));
         return accountMapper.mapToResponse(account);
     }
 

@@ -3,8 +3,10 @@ package com.assignment.bank.transaction.service;
 import com.assignment.bank.account.entity.Account;
 import com.assignment.bank.account.enums.Currency;
 import com.assignment.bank.account.repository.AccountRepository;
+import com.assignment.bank.exception.CurrencyMismatchException;
 import com.assignment.bank.exception.InsufficientBalanceException;
 import com.assignment.bank.exception.NotFoundException;
+import com.assignment.bank.security.AuthenticatedUserProvider;
 import com.assignment.bank.transaction.dto.TransactionRequest;
 import com.assignment.bank.transaction.dto.TransactionResponse;
 import com.assignment.bank.transaction.entity.Transaction;
@@ -24,16 +26,20 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final ExchangeRateProvider exchangeRateProvider;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
+
 
     public TransactionService(AccountRepository accountRepository,
                               TransactionRepository transactionRepository,
                               TransactionMapper transactionMapper,
-                              ExchangeRateProvider exchangeRateProvider
+                              ExchangeRateProvider exchangeRateProvider,
+                              AuthenticatedUserProvider authenticatedUserProvider
     ) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.exchangeRateProvider = exchangeRateProvider;
+        this.authenticatedUserProvider = authenticatedUserProvider;
     }
 
     @Transactional
@@ -54,9 +60,7 @@ public class TransactionService {
         BigDecimal exchangeRate = getExchangeRate(request.currency(), account.getCurrency());
         BigDecimal convertedAmount = convert(request.amount(), exchangeRate);
 
-        if (type == TransactionType.DEBIT) {
-            validateSufficientBalance(account, convertedAmount);
-        }
+        validateTransaction(type, request.currency(), account, convertedAmount);
 
         BigDecimal newBalance = calculateNewBalance(account, convertedAmount, type);
         updateAccountBalance(account, newBalance);
@@ -76,6 +80,22 @@ public class TransactionService {
     private BigDecimal convert(BigDecimal amount, BigDecimal rate) {
         return amount.multiply(rate);
     }
+
+    private void validateTransaction(TransactionType type, Currency requestCurrency, Account account, BigDecimal amount) {
+        if (type == TransactionType.DEBIT) {
+            validateCurrencyMatch(requestCurrency, account.getCurrency());
+            validateSufficientBalance(account, amount);
+        }
+    }
+
+    private void validateCurrencyMatch(Currency requestCurrency, Currency accountCurrency) {
+        if (requestCurrency != accountCurrency) {
+            throw new CurrencyMismatchException(
+                    "Debit currency must match account currency. Expected: " + accountCurrency + ", got: " + requestCurrency
+            );
+        }
+    }
+
 
     private void validateSufficientBalance(Account account, BigDecimal amount) {
         if (account.getBalance().compareTo(amount) < 0) {
@@ -97,7 +117,7 @@ public class TransactionService {
     }
 
     private @NonNull Account getAccount(String iban) {
-        return accountRepository.findByIban(iban)
+        return accountRepository.findByIbanAndOwner(iban, authenticatedUserProvider.get())
                 .orElseThrow(() -> new NotFoundException("Account with iban " + iban + " not found"));
     }
 

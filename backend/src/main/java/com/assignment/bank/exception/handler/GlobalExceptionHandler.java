@@ -1,6 +1,7 @@
 package com.assignment.bank.exception.handler;
 
 import com.assignment.bank.exception.BusinessException;
+import com.assignment.bank.exception.CurrencyMismatchException;
 import com.assignment.bank.exception.InsufficientBalanceException;
 import com.assignment.bank.exception.NotFoundException;
 import com.assignment.bank.exception.model.ErrorResponse;
@@ -93,6 +94,17 @@ public class GlobalExceptionHandler {
                         ex.getMessage(),
                         "INSUFFICIENT_BALANCE",
                         400,
+                        LocalDateTime.now()
+                ));
+    }
+
+    @ExceptionHandler(CurrencyMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleCurrencyMismatch(CurrencyMismatchException ex) {
+        return ResponseEntity.unprocessableContent()
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        "CURRENCY_MISMATCH",
+                        422,
                         LocalDateTime.now()
                 ));
     }

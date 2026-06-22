@@ -4,26 +4,50 @@ import com.assignment.bank.account.enums.Currency;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Component
 public class ExchangeRateProvider {
 
-    public static final BigDecimal EUR_TO_USD = new BigDecimal("0.85");
-    public static final BigDecimal USD_TO_EUR = new BigDecimal("1.17");
+    private static final Map<String, BigDecimal> RATES = Map.ofEntries(
+            Map.entry("EUR_USD", new BigDecimal("1.13")),
+            Map.entry("EUR_SEK", new BigDecimal("11.15")),
+            Map.entry("EUR_GBP", new BigDecimal("0.85")),
+            Map.entry("EUR_VND", new BigDecimal("27100.00")),
 
-    public BigDecimal getRate(Currency source, Currency target) { // <- remove static
+            Map.entry("USD_EUR", new BigDecimal("0.87")),
+            Map.entry("USD_SEK", new BigDecimal("10.32")),
+            Map.entry("USD_GBP", new BigDecimal("0.79")),
+            Map.entry("USD_VND", new BigDecimal("25100.00")),
+
+            Map.entry("SEK_EUR", new BigDecimal("0.090")),
+            Map.entry("SEK_USD", new BigDecimal("0.097")),
+            Map.entry("SEK_GBP", new BigDecimal("0.076")),
+            Map.entry("SEK_VND", new BigDecimal("2430.00")),
+
+            Map.entry("GBP_EUR", new BigDecimal("1.18")),
+            Map.entry("GBP_USD", new BigDecimal("1.27")),
+            Map.entry("GBP_SEK", new BigDecimal("13.13")),
+            Map.entry("GBP_VND", new BigDecimal("31950.00")),
+
+            Map.entry("VND_EUR", new BigDecimal("0.000037")),
+            Map.entry("VND_USD", new BigDecimal("0.000040")),
+            Map.entry("VND_SEK", new BigDecimal("0.000412")),
+            Map.entry("VND_GBP", new BigDecimal("0.000031"))
+    );
+
+    public BigDecimal getRate(Currency source, Currency target) {
         if (source == target) {
             return BigDecimal.ONE;
         }
 
-        return switch (source) {
-            case EUR -> target == Currency.USD ? USD_TO_EUR : throwUnsupported(source, target);
-            case USD -> target == Currency.EUR ? EUR_TO_USD : throwUnsupported(source, target);
-            default -> throwUnsupported(source, target);
-        };
-    }
+        String key = source + "_" + target;
+        BigDecimal rate = RATES.get(key);
 
-    private BigDecimal throwUnsupported(Currency source, Currency target) { // <- remove static
-        throw new IllegalArgumentException("Unsupported conversion: " + source + " -> " + target);
+        if (rate == null) {
+            throw new IllegalArgumentException("Unsupported conversion: " + source + " -> " + target);
+        }
+
+        return rate;
     }
 }
