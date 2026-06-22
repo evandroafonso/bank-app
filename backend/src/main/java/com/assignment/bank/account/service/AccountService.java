@@ -1,5 +1,6 @@
 package com.assignment.bank.account.service;
 
+import com.assignment.bank.account.dto.AccountBalanceResponse;
 import com.assignment.bank.account.dto.AccountRequest;
 import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.entity.Account;
@@ -79,6 +80,14 @@ public class AccountService {
         Account account = accountRepository.findByIbanAndOwner(iban, loggedUser)
                 .orElseThrow(() -> new NotFoundException("Account not found with iban: " + iban));
         return accountMapper.mapToResponse(account);
+    }
+
+    public AccountBalanceResponse getBalance(String iban) {
+        User loggedUser = authenticatedUserProvider.get();
+        Account account = accountRepository.findByIbanAndOwner(iban, loggedUser)
+                .orElseThrow(() -> new NotFoundException("Account not found with iban: " + iban));
+
+        return accountMapper.mapToBalanceResponse(account);
     }
 
 }

@@ -1,5 +1,6 @@
 package com.assignment.bank.account.controller;
 
+import com.assignment.bank.account.dto.AccountBalanceResponse;
 import com.assignment.bank.account.dto.AccountRequest;
 import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.service.AccountService;
@@ -35,6 +36,12 @@ public class AccountController {
     public ResponseEntity<AccountResponse> findByIban(@PathVariable String iban) {
         AccountResponse account = accountService.findByIban(iban);
         return ResponseEntity.ok(account);
+    }
+
+    @GetMapping("/balance/{iban}")
+    public ResponseEntity<AccountBalanceResponse> getBalance(@PathVariable String iban) {
+        AccountBalanceResponse balance = accountService.getBalance(iban);
+        return ResponseEntity.ok(balance);
     }
 
 }

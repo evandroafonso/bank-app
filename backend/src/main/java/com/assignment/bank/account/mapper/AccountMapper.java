@@ -1,5 +1,6 @@
 package com.assignment.bank.account.mapper;
 
+import com.assignment.bank.account.dto.AccountBalanceResponse;
 import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.entity.Account;
 import com.assignment.bank.user.mapper.UserMapper;
@@ -26,5 +27,17 @@ public class AccountMapper {
                 .balance(account.getBalance())
                 .user(userMapper.mapToResponse(account.getOwner()))
                 .build();
+    }
+
+    public AccountBalanceResponse mapToBalanceResponse(Account account) {
+        if (account == null) {
+            return null;
+        }
+
+        return new AccountBalanceResponse(
+                account.getIban(),
+                account.getCurrency().toString(),
+                account.getBalance()
+        );
     }
 }
