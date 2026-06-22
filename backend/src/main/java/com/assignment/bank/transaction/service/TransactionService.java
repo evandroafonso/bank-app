@@ -27,19 +27,21 @@ public class TransactionService {
     private final TransactionMapper transactionMapper;
     private final ExchangeRateProvider exchangeRateProvider;
     private final AuthenticatedUserProvider authenticatedUserProvider;
-
+    private final FraudDetectorService fraudDetectorService;
 
     public TransactionService(AccountRepository accountRepository,
                               TransactionRepository transactionRepository,
                               TransactionMapper transactionMapper,
                               ExchangeRateProvider exchangeRateProvider,
-                              AuthenticatedUserProvider authenticatedUserProvider
+                              AuthenticatedUserProvider authenticatedUserProvider,
+                              FraudDetectorService fraudDetectorService
     ) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.exchangeRateProvider = exchangeRateProvider;
         this.authenticatedUserProvider = authenticatedUserProvider;
+        this.fraudDetectorService = fraudDetectorService;
     }
 
     @Transactional
@@ -60,7 +62,7 @@ public class TransactionService {
         BigDecimal exchangeRate = getExchangeRate(request.currency(), account.getCurrency());
         BigDecimal convertedAmount = convert(request.amount(), exchangeRate);
 
-        validateTransaction(type, request.currency(), account, convertedAmount);
+        validateTransaction(type, request.currency(), account, convertedAmount, request.amount());
 
         BigDecimal newBalance = calculateNewBalance(account, convertedAmount, type);
         updateAccountBalance(account, newBalance);
@@ -81,7 +83,8 @@ public class TransactionService {
         return amount.multiply(rate);
     }
 
-    private void validateTransaction(TransactionType type, Currency requestCurrency, Account account, BigDecimal amount) {
+    private void validateTransaction(TransactionType type, Currency requestCurrency, Account account, BigDecimal amount, BigDecimal requestAmount) {
+        fraudDetectorService.check(requestAmount);
         if (type == TransactionType.DEBIT) {
             validateCurrencyMatch(requestCurrency, account.getCurrency());
             validateSufficientBalance(account, amount);

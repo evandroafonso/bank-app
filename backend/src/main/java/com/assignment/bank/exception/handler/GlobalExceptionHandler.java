@@ -1,9 +1,6 @@
 package com.assignment.bank.exception.handler;
 
-import com.assignment.bank.exception.BusinessException;
-import com.assignment.bank.exception.CurrencyMismatchException;
-import com.assignment.bank.exception.InsufficientBalanceException;
-import com.assignment.bank.exception.NotFoundException;
+import com.assignment.bank.exception.*;
 import com.assignment.bank.exception.model.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -105,6 +102,17 @@ public class GlobalExceptionHandler {
                         ex.getMessage(),
                         "CURRENCY_MISMATCH",
                         422,
+                        LocalDateTime.now()
+                ));
+    }
+
+    @ExceptionHandler(FraudDetectedException.class)
+    public ResponseEntity<ErrorResponse> handleFraudDetected(FraudDetectedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(
+                        "Transaction could not be processed. Please contact support.",
+                        "TRANSACTION_DENIED",
+                        403,
                         LocalDateTime.now()
                 ));
     }
