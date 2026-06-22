@@ -21,7 +21,7 @@ public class AccountMapper {
 
         return AccountResponse.builder()
                 .uuid(account.getUuid().toString())
-                .IBAN(account.getIBAN())
+                .iban(account.getIban())
                 .currency(account.getCurrency().toString())
                 .balance(account.getBalance())
                 .user(userMapper.mapToResponse(account.getOwner()))

@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 @Builder
 public record AccountResponse(
         String uuid,
-        String IBAN,
+        String iban,
         String currency,
         BigDecimal balance,
         UserResponse user

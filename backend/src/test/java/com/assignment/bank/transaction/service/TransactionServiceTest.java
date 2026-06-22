@@ -43,7 +43,7 @@ class TransactionServiceTest {
         Transaction savedTransaction = mock(Transaction.class);
         TransactionResponse response = mock(TransactionResponse.class);
 
-        when(accountRepository.findByIBAN("EE382200221020145685")).thenReturn(Optional.of(account));
+        when(accountRepository.findByIban("EE382200221020145685")).thenReturn(Optional.of(account));
         when(accountRepository.save(account)).thenReturn(account);
         when(transactionMapper.mapToEntity(request, account)).thenReturn(transaction);
         when(transactionRepository.save(transaction)).thenReturn(savedTransaction);
@@ -54,7 +54,7 @@ class TransactionServiceTest {
         assertNotNull(result);
         assertEquals(new BigDecimal("600.00"), account.getBalance());
 
-        verify(accountRepository).findByIBAN("EE382200221020145685");
+        verify(accountRepository).findByIban("EE382200221020145685");
         verify(accountRepository).save(account);
         verify(transactionRepository).save(transaction);
         verify(transactionMapper).mapToResponse(savedTransaction);
@@ -64,11 +64,11 @@ class TransactionServiceTest {
     void shouldThrowNotFoundExceptionWhenAccountDoesNotExist() {
         TransactionRequest request = new TransactionRequest("INVALID", new BigDecimal("100.00"), "test");
 
-        when(accountRepository.findByIBAN("INVALID")).thenReturn(Optional.empty());
+        when(accountRepository.findByIban("INVALID")).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> transactionService.credit(request));
 
-        verify(accountRepository).findByIBAN("INVALID");
+        verify(accountRepository).findByIban("INVALID");
         verifyNoInteractions(transactionMapper);
         verifyNoInteractions(transactionRepository);
     }
@@ -78,7 +78,7 @@ class TransactionServiceTest {
         TransactionRequest request = new TransactionRequest("EE382200221020145685", new BigDecimal("100.00"), "test");
         Account account = mock(Account.class);
 
-        when(accountRepository.findByIBAN("EE123")).thenReturn(Optional.of(account));
+        when(accountRepository.findByIban("EE123")).thenReturn(Optional.of(account));
         when(accountRepository.save(any())).thenReturn(account);
         when(transactionMapper.mapToEntity(any(), any())).thenThrow(new RuntimeException("Mapper error"));
 

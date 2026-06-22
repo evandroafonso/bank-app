@@ -56,7 +56,7 @@ class AccountControllerTest {
         AccountRequest request = new AccountRequest(Currency.EUR);
         AccountResponse response = AccountResponse.builder()
                 .uuid("123e4567-e89b-12d3-a456-426614174000")
-                .IBAN("EE142212345678901234")
+                .iban("EE142212345678901234")
                 .currency(String.valueOf(Currency.EUR))
                 .balance(new BigDecimal("2.3212"))
                 .user(null)
@@ -69,7 +69,7 @@ class AccountControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.uuid").value("123e4567-e89b-12d3-a456-426614174000"))
-                .andExpect(jsonPath("$.IBAN").value("EE142212345678901234"))
+                .andExpect(jsonPath("$.iban").value("EE142212345678901234"))
                 .andExpect(jsonPath("$.currency").value("EUR"))
                 .andExpect(jsonPath("$.balance").value("2.3212"));
 
@@ -86,7 +86,7 @@ class AccountControllerTest {
     @Test
     void shouldFindAllAccountsSuccessfully() throws Exception {
         AccountResponse response = AccountResponse.builder()
-                .IBAN("EE12345678901234")
+                .iban("EE12345678901234")
                 .currency("EUR")
                 .balance(BigDecimal.ZERO)
                 .build();
@@ -96,42 +96,42 @@ class AccountControllerTest {
         mockMvc.perform(get("/api/accounts")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].IBAN").value("EE12345678901234"));
+                .andExpect(jsonPath("$[0].iban").value("EE12345678901234"));
 
         verify(accountService, times(1)).findAll();
     }
 
     @Test
-    void shouldFindByIBANSuccessfully() throws Exception {
+    void shouldFindByIbanSuccessfully() throws Exception {
         String iban = "EE12345678901234";
         AccountResponse response = AccountResponse.builder()
-                .IBAN(iban)
+                .iban(iban)
                 .currency("EUR")
                 .balance(BigDecimal.TEN)
                 .build();
 
-        when(accountService.findByIBAN(iban)).thenReturn(response);
+        when(accountService.findByIban(iban)).thenReturn(response);
 
-        mockMvc.perform(get("/api/accounts/{IBAN}", iban)
+        mockMvc.perform(get("/api/accounts/{iban}", iban)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.IBAN").value(iban))
+                .andExpect(jsonPath("$.iban").value(iban))
                 .andExpect(jsonPath("$.currency").value("EUR"));
 
-        verify(accountService, times(1)).findByIBAN(iban);
+        verify(accountService, times(1)).findByIban(iban);
     }
 
     @Test
-    void shouldReturnNotFoundWhenIBANDoesNotExist() throws Exception {
+    void shouldReturnNotFoundWhenIbanDoesNotExist() throws Exception {
         String iban = "NON-EXISTENT";
 
-        when(accountService.findByIBAN(iban))
+        when(accountService.findByIban(iban))
                 .thenThrow(new com.assignment.bank.exception.NotFoundException("Account not found"));
 
-        mockMvc.perform(get("/api/accounts/{IBAN}", iban)
+        mockMvc.perform(get("/api/accounts/{iban}", iban)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
-        verify(accountService, times(1)).findByIBAN(iban);
+        verify(accountService, times(1)).findByIban(iban);
     }
 
     @Test

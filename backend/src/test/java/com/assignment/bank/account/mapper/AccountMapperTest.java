@@ -34,7 +34,7 @@ class AccountMapperTest {
 
         Account account = Account.builder()
                 .uuid(accountUuid)
-                .IBAN("EE12345678901234")
+                .iban("EE12345678901234")
                 .currency(com.assignment.bank.account.enums.Currency.EUR)
                 .balance(new BigDecimal("100.00"))
                 .owner(owner)
@@ -46,7 +46,7 @@ class AccountMapperTest {
 
         assertNotNull(response);
         assertEquals(accountUuid.toString(), response.uuid());
-        assertEquals("EE12345678901234", response.IBAN());
+        assertEquals("EE12345678901234", response.iban());
         assertEquals("EUR", response.currency());
         assertEquals(new BigDecimal("100.00"), response.balance());
         assertEquals(userResponse, response.user());

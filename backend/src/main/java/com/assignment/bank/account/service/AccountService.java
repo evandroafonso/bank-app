@@ -39,7 +39,7 @@ public class AccountService {
         User loggedUser = getAuthenticatedUser();
 
         Account account = new Account();
-        account.setIBAN(generateIban());
+        account.setIban(generateIban());
         account.setOwner(loggedUser);
         account.setCurrency(accountRequest.currency());
         accountRepository.save(account);
@@ -88,9 +88,9 @@ public class AccountService {
                 .toList();
     }
 
-    public AccountResponse findByIBAN(String IBAN) {
-        Account account = accountRepository.findByIBAN(IBAN)
-                .orElseThrow(() -> new NotFoundException("Account not found with IBAN: " + IBAN));
+    public AccountResponse findByIban(String IBAN) {
+        Account account = accountRepository.findByIban(IBAN)
+                .orElseThrow(() -> new NotFoundException("Account not found with iban: " + IBAN));
         return accountMapper.mapToResponse(account);
     }
 

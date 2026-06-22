@@ -24,7 +24,7 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final ExchangeRateProvider exchangeRateProvider;
-    
+
     public TransactionService(AccountRepository accountRepository,
                               TransactionRepository transactionRepository,
                               TransactionMapper transactionMapper,
@@ -49,7 +49,7 @@ public class TransactionService {
     private TransactionResponse processTransaction(TransactionRequest request, TransactionType type) {
         validateAmount(request.amount());
 
-        Account account = getAccount(request.IBAN());
+        Account account = getAccount(request.iban());
 
         BigDecimal exchangeRate = getExchangeRate(request.currency(), account.getCurrency());
         BigDecimal convertedAmount = convert(request.amount(), exchangeRate);
@@ -96,9 +96,9 @@ public class TransactionService {
         account.setBalance(newBalance);
     }
 
-    private @NonNull Account getAccount(String IBAN) {
-        return accountRepository.findByIBAN(IBAN)
-                .orElseThrow(() -> new NotFoundException("Account with IBAN " + IBAN + " not found"));
+    private @NonNull Account getAccount(String iban) {
+        return accountRepository.findByIban(iban)
+                .orElseThrow(() -> new NotFoundException("Account with iban " + iban + " not found"));
     }
 
     private void validateAmount(BigDecimal amount) {

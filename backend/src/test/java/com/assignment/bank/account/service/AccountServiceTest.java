@@ -148,25 +148,25 @@ class AccountServiceTest {
         Account account = mock(Account.class);
         AccountResponse response = mock(AccountResponse.class);
 
-        when(accountRepository.findByIBAN(iban)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIban(iban)).thenReturn(Optional.of(account));
         when(accountMapper.mapToResponse(account)).thenReturn(response);
 
-        AccountResponse result = accountService.findByIBAN(iban);
+        AccountResponse result = accountService.findByIban(iban);
 
         assertNotNull(result);
         assertEquals(response, result);
-        verify(accountRepository).findByIBAN(iban);
+        verify(accountRepository).findByIban(iban);
     }
 
     @Test
     void shouldThrowNotFoundExceptionWhenIBANDoesNotExist() {
-        String iban = "INVALID-IBAN";
+        String iban = "INVALID-iban";
 
-        when(accountRepository.findByIBAN(iban)).thenReturn(Optional.empty());
+        when(accountRepository.findByIban(iban)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> accountService.findByIBAN(iban));
+        assertThrows(NotFoundException.class, () -> accountService.findByIban(iban));
 
-        verify(accountRepository).findByIBAN(iban);
+        verify(accountRepository).findByIban(iban);
         verifyNoInteractions(accountMapper);
     }
 

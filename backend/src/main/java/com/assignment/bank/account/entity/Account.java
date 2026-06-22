@@ -22,7 +22,7 @@ import java.util.List;
 public class Account extends BaseEntity {
 
     @Column(nullable = false, unique = true)
-    private String IBAN;
+    private String iban;
 
     @Enumerated(EnumType.STRING)
     private Currency currency;

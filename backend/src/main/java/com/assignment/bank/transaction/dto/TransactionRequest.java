@@ -8,13 +8,18 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record TransactionRequest(
-        String IBAN,
-        
+
+        @NotNull
+        String iban,
+
         @NotNull
         @Positive
         @Digits(integer = 15, fraction = 4)
         BigDecimal amount,
-        String description,
-        Currency currency
+
+        @NotNull
+        Currency currency,
+
+        String description
 ) {
 }

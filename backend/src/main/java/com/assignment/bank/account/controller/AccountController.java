@@ -31,9 +31,9 @@ public class AccountController {
         return ResponseEntity.ok(accounts);
     }
 
-    @GetMapping("/{IBAN}")
-    public ResponseEntity<AccountResponse> findByIBAN(@PathVariable String IBAN) {
-        AccountResponse account = accountService.findByIBAN(IBAN);
+    @GetMapping("/{iban}")
+    public ResponseEntity<AccountResponse> findByIban(@PathVariable String iban) {
+        AccountResponse account = accountService.findByIban(iban);
         return ResponseEntity.ok(account);
     }
 
