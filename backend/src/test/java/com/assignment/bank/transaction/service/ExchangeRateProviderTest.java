@@ -22,13 +22,13 @@ class ExchangeRateProviderTest {
     @Test
     void shouldReturnUsdToEurRate() {
         BigDecimal rate = exchangeRateProvider.getRate(Currency.EUR, Currency.USD);
-        assertEquals(0, new BigDecimal("1.17").compareTo(rate));
+        assertEquals(0, new BigDecimal("1.15").compareTo(rate));
     }
 
     @Test
     void shouldReturnEurToUsdRate() {
         BigDecimal rate = exchangeRateProvider.getRate(Currency.USD, Currency.EUR);
-        assertEquals(0, new BigDecimal("0.85").compareTo(rate));
+        assertEquals(0, new BigDecimal("0.87").compareTo(rate));
     }
 
     @Test
@@ -52,7 +52,7 @@ class ExchangeRateProviderTest {
     @Test
     void shouldThrowExceptionWhenSourceCurrencyIsNull() {
         assertThrows(
-                NullPointerException.class,
+                IllegalArgumentException.class,
                 () -> exchangeRateProvider.getRate(null, Currency.EUR)
         );
     }

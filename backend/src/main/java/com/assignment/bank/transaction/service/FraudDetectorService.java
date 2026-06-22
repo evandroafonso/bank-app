@@ -18,8 +18,13 @@ public class FraudDetectorService {
     private static final String SUCCESS_URL = "https://httpstatuses.maor.io/200";
     private static final String FRAUD_URL = "https://httpstatuses.maor.io/403";
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+
+    public FraudDetectorService(HttpClient httpClient, ObjectMapper objectMapper) {
+        this.httpClient = httpClient;
+        this.objectMapper = objectMapper;
+    }
 
     public void check(BigDecimal amount) {
         String url = isFraudAmount(amount) ? FRAUD_URL : SUCCESS_URL;

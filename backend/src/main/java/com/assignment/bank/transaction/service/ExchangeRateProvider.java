@@ -10,7 +10,7 @@ import java.util.Map;
 public class ExchangeRateProvider {
 
     private static final Map<String, BigDecimal> RATES = Map.ofEntries(
-            Map.entry("EUR_USD", new BigDecimal("1.13")),
+            Map.entry("EUR_USD", new BigDecimal("1.15")),
             Map.entry("EUR_SEK", new BigDecimal("11.15")),
             Map.entry("EUR_GBP", new BigDecimal("0.85")),
             Map.entry("EUR_VND", new BigDecimal("27100.00")),
