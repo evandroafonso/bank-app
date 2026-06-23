@@ -1,6 +1,6 @@
 package com.assignment.bank.report.service;
 
-import com.assignment.bank.report.dto.TransactionReportItem;
+import com.assignment.bank.report.dto.TransactionReportItemResponse;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
@@ -11,7 +11,7 @@ import java.io.ByteArrayOutputStream;
 @Service
 public class TransactionPdfService {
 
-    public byte[] generatePdf(TransactionReportItem item) {
+    public byte[] generatePdf(TransactionReportItemResponse item) {
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
@@ -33,10 +33,20 @@ public class TransactionPdfService {
 
             addRow(table, "UUID", item.uuid().toString());
             addRow(table, "Source Amount", item.sourceAmount().toString());
-            addRow(table, "Converted Amount", item.convertedAmount().toString());
-            addRow(table, "Exchange Rate", item.exchangeRate().toString());
+
+            if (item.convertedAmount() != null) {
+                addRow(table, "Converted Amount", item.convertedAmount().toString());
+            }
+            if (item.exchangeRate() != null) {
+                addRow(table, "Exchange Rate", item.exchangeRate().toString());
+            }
+
             addRow(table, "Currency", item.currency());
-            addRow(table, "Target Currency", item.targetCurrency());
+
+            if (item.targetCurrency() != null) {
+                addRow(table, "Target Currency", item.targetCurrency());
+            }
+
             addRow(table, "Balance", item.balance().toString());
             addRow(table, "Type", item.type());
             addRow(table, "Description", item.description());

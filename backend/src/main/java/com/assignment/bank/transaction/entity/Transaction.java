@@ -40,7 +40,7 @@ public class Transaction extends BaseEntity {
     @Column(name = "converted_amount", nullable = false, precision = 19, scale = 4)
     private BigDecimal convertedAmount;
 
-    @Column(name = "exchange_rate", nullable = false, precision = 19, scale = 4)
+    @Column(name = "exchange_rate", nullable = false, precision = 19, scale = 8)
     private BigDecimal exchangeRate;
 
     @Column(name = "balance_after", nullable = false, precision = 19, scale = 4)

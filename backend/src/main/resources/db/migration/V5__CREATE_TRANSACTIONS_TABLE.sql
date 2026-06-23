@@ -7,7 +7,7 @@ CREATE TABLE transactions
     target_currency  VARCHAR(10) NOT NULL,
     source_amount    DECIMAL(19, 4) NOT NULL,
     converted_amount DECIMAL(19, 4) NOT NULL,
-    exchange_rate    DECIMAL(19, 4) NOT NULL,
+    exchange_rate    DECIMAL(19, 8) NOT NULL,
     balance_after    DECIMAL(19, 4) NOT NULL,
     type             VARCHAR(20) NOT NULL,
     description      VARCHAR(255),

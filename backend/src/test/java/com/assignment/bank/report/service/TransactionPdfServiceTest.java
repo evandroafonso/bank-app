@@ -1,6 +1,6 @@
 package com.assignment.bank.report.service;
 
-import com.assignment.bank.report.dto.TransactionReportItem;
+import com.assignment.bank.report.dto.TransactionReportItemResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,7 +21,7 @@ class TransactionPdfServiceTest {
     @Test
     void shouldGeneratePdfSuccessfully() {
 
-        TransactionReportItem item = new TransactionReportItem(
+        TransactionReportItemResponse item = new TransactionReportItemResponse(
                 UUID.randomUUID(),
                 new BigDecimal("100.0000"),
                 new BigDecimal("100.0000"),
@@ -43,7 +43,7 @@ class TransactionPdfServiceTest {
     @Test
     void shouldGeneratePdfEvenWithNullDescription() {
 
-        TransactionReportItem item = new TransactionReportItem(
+        TransactionReportItemResponse item = new TransactionReportItemResponse(
                 UUID.randomUUID(),
                 new BigDecimal("100.0000"),
                 new BigDecimal("100.0000"),
@@ -65,7 +65,7 @@ class TransactionPdfServiceTest {
     @Test
     void shouldThrowRuntimeExceptionWhenPdfFails() {
 
-        TransactionReportItem item = new TransactionReportItem(
+        TransactionReportItemResponse item = new TransactionReportItemResponse(
                 UUID.randomUUID(),
                 new BigDecimal("100.0000"),
                 new BigDecimal("100.0000"),

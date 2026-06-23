@@ -1,7 +1,7 @@
 package com.assignment.bank.report.service;
 
 import com.assignment.bank.account.enums.Currency;
-import com.assignment.bank.report.dto.TransactionReportItem;
+import com.assignment.bank.report.dto.TransactionReportItemResponse;
 import com.assignment.bank.report.dto.TransactionReportRequest;
 import com.assignment.bank.report.dto.TransactionReportResponse;
 import com.assignment.bank.transaction.entity.Transaction;
@@ -53,7 +53,7 @@ class TransactionReportServiceTest {
         when(transaction.getCreatedAt()).thenReturn(LocalDateTime.now());
 
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(transaction));
-        when(pdfService.generatePdf(any(TransactionReportItem.class)))
+        when(pdfService.generatePdf(any(TransactionReportItemResponse.class)))
                 .thenReturn("pdf-content".getBytes());
 
         TransactionReportRequest request = new TransactionReportRequest(uuid);
@@ -65,7 +65,7 @@ class TransactionReportServiceTest {
         assertEquals("transaction-" + uuid + ".pdf", response.fileName());
 
         verify(repository).findByUuid(uuid);
-        verify(pdfService).generatePdf(any(TransactionReportItem.class));
+        verify(pdfService).generatePdf(any(TransactionReportItemResponse.class));
     }
 
     @Test
@@ -108,7 +108,7 @@ class TransactionReportServiceTest {
 
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(transaction));
 
-        when(pdfService.generatePdf(any(TransactionReportItem.class)))
+        when(pdfService.generatePdf(any(TransactionReportItemResponse.class)))
                 .thenReturn("pdf".getBytes());
 
         TransactionReportRequest request = new TransactionReportRequest(uuid);
