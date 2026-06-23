@@ -1,0 +1,42 @@
+import { createReducer, on } from '@ngrx/store';
+import {
+  Account,
+  loadAccounts,
+  loadAccountsSuccess,
+  loadAccountsFailure,
+} from './accounts.actions';
+
+export interface AccountsState {
+  accounts: Account[];
+  loading: boolean;
+  error: string | null;
+}
+
+export const initialState: AccountsState = {
+  accounts: [],
+  loading: false,
+  error: null,
+};
+
+export const accountsReducer = createReducer(
+  initialState,
+
+  on(loadAccounts, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+
+  on(loadAccountsSuccess, (state, { accounts }) => ({
+    ...state,
+    accounts,
+    loading: false,
+    error: null,
+  })),
+
+  on(loadAccountsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
+);
