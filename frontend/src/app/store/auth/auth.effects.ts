@@ -27,8 +27,8 @@ export class AuthEffects {
             catchError((error) => {
               const message =
                 error.status === 401
-                  ? 'E-mail ou senha inválidos.'
-                  : 'Erro ao conectar ao servidor. Tente novamente.';
+                  ? 'Invalid email or password.'
+                  : 'Unable to connect to the server. Please try again.';
               return of(loginFailure({ error: message }));
             }),
           ),

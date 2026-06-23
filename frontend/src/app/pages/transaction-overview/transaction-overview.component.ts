@@ -8,7 +8,7 @@ import { RouterModule } from '@angular/router';
   template: `
     <div style="padding: 40px; font-family: sans-serif;">
       <h1>Transaction Overview</h1>
-      <a routerLink="/dashboard">← Voltar</a>
+      <a routerLink="/dashboard">Back</a>
     </div>
   `,
 })

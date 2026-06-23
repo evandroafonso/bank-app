@@ -25,7 +25,7 @@ export class TransactionsEffects {
           this.transactionsService.getTransactionHistory(iban, page, size).pipe(
             map((data) => loadTransactionsSuccess({ data })),
             catchError(() =>
-              of(loadTransactionsFailure({ error: 'Erro ao carregar transações.' })),
+              of(loadTransactionsFailure({ error: 'Unable to load transactions.' })),
             ),
           ),
         ),

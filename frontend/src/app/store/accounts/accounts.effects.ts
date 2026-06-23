@@ -21,7 +21,7 @@ export class AccountsEffects {
           this.accountsService.getAccounts().pipe(
             map((accounts) => loadAccountsSuccess({ accounts })),
             catchError(() =>
-              of(loadAccountsFailure({ error: 'Erro ao carregar contas. Tente novamente.' })),
+              of(loadAccountsFailure({ error: 'Unable to load accounts. Please try again.' })),
             ),
           ),
         ),

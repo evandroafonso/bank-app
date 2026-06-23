@@ -7,7 +7,7 @@ import {
   ViewChild,
   NgZone,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
@@ -23,8 +23,7 @@ import {
   selectAccountDetailError,
 } from '../../store/account-detail/account-detail.selectors';
 import { Account } from '../../store/accounts/accounts.actions';
-import { logout } from '../../store/auth/auth.actions';
-import { selectUser } from '../../store/auth/auth.selectors';
+import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import {
   loadTransactions,
   clearTransactions,
@@ -44,7 +43,7 @@ const PAGE_SIZE = 5;
 @Component({
   selector: 'app-account-overview',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, SidebarComponent],
   templateUrl: './account-overview.component.html',
   styleUrls: ['./account-overview.component.scss'],
 })
@@ -54,7 +53,6 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
   account$: Observable<Account | null>;
   accountLoading$: Observable<boolean>;
   accountError$: Observable<string | null>;
-  user$: Observable<any>;
   transactions$: Observable<Transaction[]>;
   transactionsLoading$: Observable<boolean>;
   transactionsError$: Observable<string | null>;
@@ -73,7 +71,6 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     this.account$ = this.store.select(selectAccountDetail);
     this.accountLoading$ = this.store.select(selectAccountDetailLoading);
     this.accountError$ = this.store.select(selectAccountDetailError);
-    this.user$ = this.store.select(selectUser);
     this.transactions$ = this.store.select(selectTransactions);
     this.transactionsLoading$ = this.store.select(selectTransactionsLoading);
     this.transactionsError$ = this.store.select(selectTransactionsError);
@@ -136,10 +133,6 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
   goToTransaction(uuid: string): void {
     this.router.navigate(['/transactions', uuid]);
-  }
-
-  onLogout(): void {
-    this.store.dispatch(logout());
   }
 
   formatIban(iban: string): string {

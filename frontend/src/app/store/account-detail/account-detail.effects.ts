@@ -25,7 +25,7 @@ export class AccountDetailEffects {
           this.accountsService.getAccountByIban(iban).pipe(
             map((account) => loadAccountDetailSuccess({ account })),
             catchError(() =>
-              of(loadAccountDetailFailure({ error: 'Erro ao carregar detalhes da conta.' })),
+              of(loadAccountDetailFailure({ error: 'Unable to load account details.' })),
             ),
           ),
         ),
