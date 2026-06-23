@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { TransactionPage } from '../store/transactions/transactions.actions';
+import { Transaction, TransactionPage } from '../store/transactions/transactions.actions';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -27,6 +27,12 @@ export class TransactionsService {
     return this.http.get<TransactionPage>(`${this.apiUrl}/history/${iban}`, {
       headers: this.getHeaders(),
       params,
+    });
+  }
+
+  getTransactionByUuid(uuid: string): Observable<Transaction> {
+    return this.http.get<Transaction>(`${this.apiUrl}/${uuid}`, {
+      headers: this.getHeaders(),
     });
   }
 }

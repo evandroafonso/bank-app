@@ -19,7 +19,7 @@ export interface TransactionsState {
 
 export const initialState: TransactionsState = {
   transactions: [],
-  currentPage: 0,
+  currentPage: -1,
   totalPages: 0,
   totalElements: 0,
   isLast: false,
@@ -39,7 +39,7 @@ export const transactionsReducer = createReducer(
   on(loadTransactionsSuccess, (state, { data }) => ({
     ...state,
     // Accumulate — append new page to existing list
-    transactions: [...state.transactions, ...data.content],
+    transactions: data.number === 0 ? data.content : [...state.transactions, ...data.content],
     currentPage: data.number,
     totalPages: data.totalPages,
     totalElements: data.totalElements,

@@ -160,6 +160,16 @@
             <div class="tx-info">
               <span class="tx-description">{{ tx.description }}</span>
               <span class="tx-date">{{ formatDate(tx.timestamp) }}</span>
+              <div class="tx-conversion">
+                <span>
+                  Exchange rate: 1 {{ tx.currency }} = {{ tx.exchangeRate | number: '1.2-4' }}
+                  {{ tx.targetCurrency }}
+                </span>
+                <span
+                  >Converted amount: {{ tx.convertedAmount | number: '1.2-2' }}
+                  {{ tx.targetCurrency }}</span
+                >
+              </div>
             </div>
 
             <div class="tx-right">

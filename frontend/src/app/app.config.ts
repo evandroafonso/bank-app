@@ -14,6 +14,8 @@ import { accountDetailReducer } from './store/account-detail/account-detail.redu
 import { AccountDetailEffects } from './store/account-detail/account-detail.effects';
 import { transactionsReducer } from './store/transactions/transactions.reducer';
 import { TransactionsEffects } from './store/transactions/transactions.effects';
+import { transactionDetailReducer } from './store/transaction-detail/transaction-detail.reducer';
+import { TransactionDetailEffects } from './store/transaction-detail/transaction-detail.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -24,8 +26,15 @@ export const appConfig: ApplicationConfig = {
       accounts: accountsReducer,
       accountDetail: accountDetailReducer,
       transactions: transactionsReducer,
+      transactionDetail: transactionDetailReducer,
     }),
-    provideEffects([AuthEffects, AccountsEffects, AccountDetailEffects, TransactionsEffects]),
+    provideEffects([
+      AuthEffects,
+      AccountsEffects,
+      AccountDetailEffects,
+      TransactionsEffects,
+      TransactionDetailEffects,
+    ]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
   ],
 };

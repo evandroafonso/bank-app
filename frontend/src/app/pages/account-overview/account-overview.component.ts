@@ -44,8 +44,8 @@ const PAGE_SIZE = 5;
   selector: 'app-account-overview',
   standalone: true,
   imports: [CommonModule, SidebarComponent],
-  templateUrl: './account-overview.component.html',
-  styleUrls: ['./account-overview.component.scss'],
+  templateUrl: '../account-overview/account-overview.component.html',
+  styleUrls: ['../account-overview/account-overview.component.scss'],
 })
 export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollSentinel') scrollSentinel!: ElementRef;
