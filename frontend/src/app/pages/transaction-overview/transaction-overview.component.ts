@@ -17,6 +17,7 @@ import {
   selectTransactionDetailLoading,
 } from '../../store/transaction-detail/transaction-detail.selectors';
 import { SmartCurrencyPipe } from '../../pipes/smart-currency-pipe';
+import { TransactionsService } from '../../services/transactions.service';
 
 @Component({
   selector: 'app-transaction-overview',
@@ -37,6 +38,7 @@ export class TransactionOverviewComponent implements OnInit, OnDestroy {
     private store: Store,
     private route: ActivatedRoute,
     private location: Location,
+    private transactionsService: TransactionsService,
   ) {
     this.transaction$ = this.store.select(selectTransactionDetail);
     this.loading$ = this.store.select(selectTransactionDetailLoading);
@@ -73,5 +75,19 @@ export class TransactionOverviewComponent implements OnInit, OnDestroy {
 
   hasCurrencyConversion(sourceCurrency: string, targetCurrency: string): boolean {
     return sourceCurrency !== targetCurrency;
+  }
+
+  downloadPdf(): void {
+    this.transactionsService.exportTransactionPdf(this.uuid).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `transaction_${this.uuid}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => console.error('Erro ao baixar PDF:', err),
+    });
   }
 }

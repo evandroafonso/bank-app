@@ -45,7 +45,8 @@ export class AuthEffects {
           ofType(loginSuccess),
           tap(({ user }) => {
             this.authService.saveToken(user.token);
-            this.router.navigate(['/dashboard']);
+            const returnUrl = this.router.parseUrl(this.router.url).queryParams['returnUrl'];
+            this.router.navigateByUrl(this.getSafeReturnUrl(returnUrl));
           }),
         ),
       { dispatch: false },
@@ -62,5 +63,11 @@ export class AuthEffects {
         ),
       { dispatch: false },
     );
+  }
+
+  private getSafeReturnUrl(returnUrl: unknown): string {
+    return typeof returnUrl === 'string' && returnUrl.startsWith('/') && !returnUrl.startsWith('//')
+      ? returnUrl
+      : '/dashboard';
   }
 }

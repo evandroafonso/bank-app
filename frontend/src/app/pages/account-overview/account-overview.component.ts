@@ -8,29 +8,40 @@ import {
   NgZone,
   ChangeDetectorRef,
 } from '@angular/core';
+
 import { ActivatedRoute, Router } from '@angular/router';
+
 import { Store } from '@ngrx/store';
-import { EMPTY, Observable } from 'rxjs';
-import { catchError, finalize, take, timeout } from 'rxjs/operators';
+
+import { Observable, Subject } from 'rxjs';
+
+import { filter, finalize, take, takeUntil, timeout } from 'rxjs/operators';
+
 import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import {
   loadAccountDetail,
   clearAccountDetail,
 } from '../../store/account-detail/account-detail.actions';
+
 import {
   selectAccountDetail,
   selectAccountDetailLoading,
   selectAccountDetailError,
 } from '../../store/account-detail/account-detail.selectors';
+
 import { Account } from '../../store/accounts/accounts.actions';
+
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
+
 import {
   loadTransactions,
   clearTransactions,
   Transaction,
 } from '../../store/transactions/transactions.actions';
+
 import {
   selectTransactions,
   selectTransactionsLoading,
@@ -39,100 +50,335 @@ import {
   selectNextPage,
   selectTotalElements,
 } from '../../store/transactions/transactions.selectors';
+
 import { TransactionsService, TransactionOperationType } from '../../services/transactions.service';
+
 import { getApiErrorMessage } from '../../utils/api-error.util';
+
 import { CurrenciesService, Currency } from '../../services/currencies.service';
+
 import { SmartCurrencyPipe } from '../../pipes/smart-currency-pipe';
 
 const PAGE_SIZE = 5;
 
 @Component({
   selector: 'app-account-overview',
+
   standalone: true,
+
   imports: [CommonModule, ReactiveFormsModule, SidebarComponent, SmartCurrencyPipe],
+
   templateUrl: '../account-overview/account-overview.component.html',
+
   styleUrls: ['../account-overview/account-overview.component.scss'],
 })
 export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scrollSentinel') scrollSentinel!: ElementRef;
 
   account$: Observable<Account | null>;
+
   accountLoading$: Observable<boolean>;
+
   accountError$: Observable<string | null>;
+
   transactions$: Observable<Transaction[]>;
+
   transactionsLoading$: Observable<boolean>;
+
   transactionsError$: Observable<string | null>;
+
   isLastPage$: Observable<boolean>;
+
   totalElements$: Observable<number>;
 
   operationForm: FormGroup;
+
+  chartFilterForm: FormGroup;
+
   operationLoading = false;
+
   operationError: string | null = null;
+
   operationSuccess: string | null = null;
+
   toastMessage: string | null = null;
+
   toastType: 'success' | 'error' = 'success';
+
   currencies: Currency[] = [];
+
   currenciesLoading = false;
+
   currenciesError: string | null = null;
 
+  // Balance chart
+
+  balanceChartData: Array<{ timestamp: string; balance: number }> = [];
+
+  balanceChartLoading = false;
+
+  balanceChartError: string | null = null;
+
+  balanceChartPath: string | null = null;
+
+  balanceChartPoints: Array<{ x: number; y: number; label: string; balance: number }> = [];
+
+  balanceChartWidth = 720;
+
+  balanceChartHeight = 160;
+
+  balanceChartPadding = 24;
+
   private iban!: string;
+
   private observer!: IntersectionObserver;
+
   private toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  private destroy$ = new Subject<void>();
+
+  private accountCurrency: string | null = null;
 
   constructor(
     private store: Store,
+
     private route: ActivatedRoute,
+
     private router: Router,
+
     private ngZone: NgZone,
+
     private cdr: ChangeDetectorRef,
+
     private fb: FormBuilder,
+
     private transactionsService: TransactionsService,
+
     private currenciesService: CurrenciesService,
   ) {
     this.operationForm = this.fb.group({
       type: ['CREDIT' as TransactionOperationType, Validators.required],
+
       amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
+
       currency: ['', Validators.required],
+
       description: ['', [Validators.minLength(3), Validators.maxLength(120)]],
     });
 
     this.account$ = this.store.select(selectAccountDetail);
+
     this.accountLoading$ = this.store.select(selectAccountDetailLoading);
+
     this.accountError$ = this.store.select(selectAccountDetailError);
+
     this.transactions$ = this.store.select(selectTransactions);
+
     this.transactionsLoading$ = this.store.select(selectTransactionsLoading);
+
     this.transactionsError$ = this.store.select(selectTransactionsError);
+
     this.isLastPage$ = this.store.select(selectIsLastPage);
+
     this.totalElements$ = this.store.select(selectTotalElements);
+
+    this.chartFilterForm = this.fb.group({
+      startDate: ['2025-06-01', Validators.required],
+
+      endDate: ['2026-06-30', Validators.required],
+    });
   }
 
   ngOnInit(): void {
     this.iban = this.route.snapshot.paramMap.get('iban')!;
+
     this.store.dispatch(loadAccountDetail({ iban: this.iban }));
+
     this.store.dispatch(loadTransactions({ iban: this.iban, page: 0, size: PAGE_SIZE }));
+
     this.loadCurrencies();
+
+    const { startDate, endDate } = this.chartFilterForm.value;
+
+    this.loadBalanceChart(this.iban, `${startDate}T00:00:00`, `${endDate}T23:59:59`);
+
+    this.account$
+
+      .pipe(
+        filter((account): account is Account => !!account?.currency),
+
+        takeUntil(this.destroy$),
+      )
+
+      .subscribe((account) => {
+        this.accountCurrency = account.currency;
+
+        this.operationForm.patchValue({ currency: account.currency });
+      });
+  }
+
+  applyChartFilter(): void {
+    this.chartFilterForm.updateValueAndValidity();
+
+    if (this.chartFilterForm.invalid) {
+      this.chartFilterForm.markAllAsTouched();
+
+      return;
+    }
+
+    const startDate = this.chartFilterForm.get('startDate')?.value;
+
+    const endDate = this.chartFilterForm.get('endDate')?.value;
+
+    this.balanceChartPath = null;
+
+    this.balanceChartPoints = [];
+
+    this.cdr.detectChanges();
+
+    this.loadBalanceChart(this.iban, `${startDate}T00:00:00`, `${endDate}T23:59:59`);
+  }
+
+  private loadBalanceChart(iban: string | number, startDate: string, endDate: string): void {
+    this.balanceChartLoading = true;
+
+    this.balanceChartError = null;
+
+    this.balanceChartPath = null;
+
+    this.balanceChartPoints = [];
+
+    this.cdr.detectChanges();
+
+    this.transactionsService
+
+      .getBalanceChart(String(iban), startDate, endDate)
+
+      .pipe(
+        finalize(() => {
+          this.balanceChartLoading = false;
+
+          this.cdr.detectChanges();
+        }),
+      )
+
+      .subscribe({
+        next: (data) => {
+          this.balanceChartData = (data || [])
+
+            .slice()
+
+            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+          this.buildChartFromData();
+
+          this.cdr.detectChanges();
+        },
+
+        error: (err) => {
+          // eslint-disable-next-line no-console
+
+          console.error('[AccountOverview] balance chart error:', err);
+
+          this.balanceChartError = getApiErrorMessage(err, 'Unable to load balance chart.');
+
+          this.showToast(this.balanceChartError, 'error');
+
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private buildChartFromData(): void {
+    const data = this.balanceChartData;
+
+    if (!data || data.length === 0) {
+      this.balanceChartPath = null;
+
+      this.balanceChartPoints = [];
+
+      return;
+    }
+
+    const w = this.balanceChartWidth;
+
+    const h = this.balanceChartHeight;
+
+    const p = this.balanceChartPadding;
+
+    const times = data.map((d) => new Date(d.timestamp).getTime());
+
+    const balances = data.map((d) => Number(d.balance));
+
+    const tMin = Math.min(...times);
+
+    const tMax = Math.max(...times);
+
+    const bMin = Math.min(...balances);
+
+    const bMax = Math.max(...balances);
+
+    const xFor = (t: number) =>
+      tMax === tMin ? w / 2 : p + ((t - tMin) / (tMax - tMin)) * (w - 2 * p);
+
+    const yFor = (b: number) =>
+      bMax === bMin ? h / 2 : p + (1 - (b - bMin) / (bMax - bMin)) * (h - 2 * p);
+
+    const points = data.map((d) => {
+      const x = Number(xFor(new Date(d.timestamp).getTime()));
+
+      const y = Number(yFor(Number(d.balance)));
+
+      return { x, y, label: this.formatDate(d.timestamp), balance: Number(d.balance) };
+    });
+
+    this.balanceChartPoints = points;
+
+    // build smooth-ish path (just a polyline path)
+
+    const d = points
+
+      .map((pnt, i) => `${i === 0 ? 'M' : 'L'} ${pnt.x.toFixed(2)} ${pnt.y.toFixed(2)}`)
+
+      .join(' ');
+
+    this.balanceChartPath = d;
+
+    Promise.resolve().then(() => this.cdr.detectChanges());
   }
 
   ngAfterViewInit(): void {
     this.observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
+
         if (!entry.isIntersecting) return;
 
         this.ngZone.run(() => {
           this.store
+
             .select(selectIsLastPage)
+
             .pipe(take(1))
+
             .subscribe((isLast) => {
               if (isLast) return;
+
               this.store
+
                 .select(selectTransactionsLoading)
+
                 .pipe(take(1))
+
                 .subscribe((loading) => {
                   if (loading) return;
+
                   this.store
+
                     .select(selectNextPage)
+
                     .pipe(take(1))
+
                     .subscribe((nextPage) => {
                       this.store.dispatch(
                         loadTransactions({ iban: this.iban, page: nextPage, size: PAGE_SIZE }),
@@ -142,6 +388,7 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
             });
         });
       },
+
       { threshold: 0.1 },
     );
 
@@ -152,10 +399,17 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
+
     if (this.toastTimeoutId) {
       clearTimeout(this.toastTimeoutId);
     }
+
+    this.destroy$.next();
+
+    this.destroy$.complete();
+
     this.store.dispatch(clearAccountDetail());
+
     this.store.dispatch(clearTransactions());
   }
 
@@ -170,74 +424,106 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
   submitOperation(): void {
     if (this.operationForm.invalid || !this.iban || this.operationLoading) {
       this.operationForm.markAllAsTouched();
+
       return;
     }
 
     const rawValue = this.operationForm.getRawValue();
+
     const payload = {
       iban: this.iban,
+
       amount: Number(rawValue.amount),
+
       description: rawValue.description?.trim() ?? '',
+
       currency: rawValue.currency,
     };
 
-    this.setOperationLoading(true);
+    this.operationLoading = true;
+
     this.operationError = null;
+
     this.operationSuccess = null;
+
+    this.cdr.detectChanges();
 
     const operation$ =
       rawValue.type === 'DEBIT'
         ? this.transactionsService.debitAccount(payload)
         : this.transactionsService.creditAccount(payload);
 
-    operation$
-      .pipe(
-        timeout(15000),
-        catchError((error) => {
-          this.handleOperationError(error, rawValue.type);
-          return EMPTY;
-        }),
-        finalize(() => this.setOperationLoading(false)),
-      )
-      .subscribe(() => {
-        this.setOperationLoading(false);
-        this.operationSuccess =
-          rawValue.type === 'DEBIT'
-            ? 'Debit completed successfully.'
-            : 'Credit completed successfully.';
-        this.showToast(this.operationSuccess, 'success');
-        this.store.dispatch(loadAccountDetail({ iban: this.iban }));
-        this.store.dispatch(clearTransactions());
-        this.store.dispatch(loadTransactions({ iban: this.iban, page: 0, size: PAGE_SIZE }));
-      });
+    operation$.pipe(timeout(15000)).subscribe({
+      next: () => {
+        this.ngZone.run(() => {
+          this.operationLoading = false;
+
+          this.operationSuccess =
+            rawValue.type === 'DEBIT'
+              ? 'Debit completed successfully.'
+              : 'Credit completed successfully.';
+
+          this.showToast(this.operationSuccess, 'success');
+
+          this.store.dispatch(loadAccountDetail({ iban: this.iban }));
+
+          this.store.dispatch(clearTransactions());
+
+          this.store.dispatch(loadTransactions({ iban: this.iban, page: 0, size: PAGE_SIZE }));
+
+          const { startDate, endDate } = this.chartFilterForm.value;
+
+          this.loadBalanceChart(this.iban, `${startDate}T00:00:00`, `${endDate}T23:59:59`);
+        });
+      },
+
+      error: (error) => {
+        this.ngZone.run(() => {
+          this.operationLoading = false;
+
+          this.operationError = this.getOperationErrorMessage(error, rawValue.type);
+
+          this.showToast(this.operationError, 'error');
+        });
+      },
+    });
   }
 
   setOperationType(type: TransactionOperationType): void {
-    this.operationForm.patchValue({ type });
+    this.operationForm.patchValue({
+      type,
+
+      currency: this.accountCurrency ?? this.operationForm.get('currency')?.value,
+    });
+
     this.operationError = null;
+
     this.operationSuccess = null;
   }
 
   private loadCurrencies(): void {
     this.currenciesLoading = true;
+
     this.currenciesError = null;
 
     this.currenciesService
+
       .getCurrencies()
+
       .pipe(finalize(() => (this.currenciesLoading = false)))
+
       .subscribe({
         next: (currencies) => {
           this.currencies = currencies;
-
-          if (!this.operationForm.get('currency')?.value && currencies.length > 0) {
-            this.operationForm.patchValue({ currency: currencies[0].code });
-          }
         },
+
         error: (error) => {
           this.currenciesError = getApiErrorMessage(
             error,
+
             'Unable to load currencies. Please try again.',
           );
+
           this.showToast(this.currenciesError, 'error');
         },
       });
@@ -245,6 +531,7 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
   private getOperationErrorMessage(
     error: unknown,
+
     operationType: TransactionOperationType,
   ): string {
     const fallbackMessage =
@@ -255,23 +542,12 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     return getApiErrorMessage(error, fallbackMessage);
   }
 
-  private handleOperationError(error: unknown, operationType: TransactionOperationType): void {
-    this.ngZone.run(() => {
-      this.setOperationLoading(false);
-      this.operationError = this.getOperationErrorMessage(error, operationType);
-      this.showToast(this.operationError, 'error');
-    });
-  }
-
-  private setOperationLoading(isLoading: boolean): void {
-    this.operationLoading = isLoading;
-    this.cdr.detectChanges();
-  }
-
   private showToast(message: string, type: 'success' | 'error'): void {
     this.ngZone.run(() => {
       this.toastMessage = message;
+
       this.toastType = type;
+
       this.cdr.detectChanges();
     });
 
@@ -282,7 +558,9 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     this.toastTimeoutId = setTimeout(() => {
       this.ngZone.run(() => {
         this.toastMessage = null;
+
         this.toastTimeoutId = null;
+
         this.cdr.detectChanges();
       });
     }, 5000);
@@ -295,9 +573,13 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
   formatDate(timestamp: string): string {
     return new Date(timestamp).toLocaleString('pt-BR', {
       day: '2-digit',
+
       month: 'short',
+
       year: 'numeric',
+
       hour: '2-digit',
+
       minute: '2-digit',
     });
   }

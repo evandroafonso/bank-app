@@ -5,22 +5,12 @@
   <main class="main-content">
     <div class="page-header">
       <div>
-        <h1>My Accounts</h1>
+        <h1>Home Page - Accounts</h1>
         <p>Manage your bank accounts</p>
       </div>
       <button type="button" class="btn-open-modal" (click)="openCreateAccountModal()">
         Create account
       </button>
-    </div>
-
-    <!-- Total balance card -->
-    <div class="summary-card" *ngIf="(accounts$ | async)?.length">
-      <div class="summary-label">Total Balance</div>
-      <div class="summary-value">
-        {{ totalBalance$ | async | number: '1.2-2' }}
-        <span class="summary-currency">EUR</span>
-      </div>
-      <div class="summary-sub">{{ (accounts$ | async)?.length }} account(s)</div>
     </div>
 
     <!-- Error -->
@@ -80,7 +70,7 @@
           </div>
 
           <div class="account-balance">
-            {{ account.balance | number: '1.2-4' }}
+            {{ account.balance | number: '1.2-2' }}
             <span class="balance-currency">{{ account.currency }}</span>
           </div>
 

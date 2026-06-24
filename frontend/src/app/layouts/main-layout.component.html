@@ -27,13 +27,6 @@
     </nav>
 
     <div class="sidebar-footer">
-      @if (user$ | async; as user) {
-        <div class="user-info">
-          <div class="user-avatar">{{ user.email?.charAt(0).toUpperCase() }}</div>
-          <span class="user-email">{{ user.email }}</span>
-        </div>
-      }
-
       <button class="btn-logout" (click)="onLogout()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path

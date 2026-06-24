@@ -16,18 +16,34 @@ export class AuthService {
   }
 
   saveToken(token: string): void {
+    if (!this.hasLocalStorage()) {
+      return;
+    }
+
     localStorage.setItem('auth_token', token);
   }
 
   getToken(): string | null {
+    if (!this.hasLocalStorage()) {
+      return null;
+    }
+
     return localStorage.getItem('auth_token');
   }
 
   removeToken(): void {
+    if (!this.hasLocalStorage()) {
+      return;
+    }
+
     localStorage.removeItem('auth_token');
   }
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  private hasLocalStorage(): boolean {
+    return typeof localStorage !== 'undefined';
   }
 }

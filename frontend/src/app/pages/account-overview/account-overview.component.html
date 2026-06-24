@@ -27,7 +27,7 @@
     <span>{{ message }}</span>
   </div>
 
-  <app-sidebar />
+  <app-sidebar></app-sidebar>
 
   <main class="main-content">
     <button class="btn-back" (click)="goBack()">
@@ -40,7 +40,7 @@
           stroke-linejoin="round"
         />
       </svg>
-      Back to Accounts
+      Back to Home Page - Accounts
     </button>
 
     <div class="alert alert-error" *ngIf="accountError$ | async as error">
@@ -210,6 +210,124 @@
       </ng-container>
     </ng-container>
 
+    <!-- Balance chart: time-series of historic account balance -->
+    <section class="balance-chart-section">
+      <h2 class="section-title">Balance History</h2>
+
+      <form class="chart-filters" [formGroup]="chartFilterForm" (ngSubmit)="applyChartFilter()">
+        <label class="field">
+          <span>Start Date</span>
+          <input type="date" formControlName="startDate" />
+        </label>
+
+        <label class="field">
+          <span>End Date</span>
+          <input type="date" formControlName="endDate" />
+        </label>
+
+        <button
+          class="filter-btn"
+          type="submit"
+          [disabled]="balanceChartLoading || chartFilterForm.invalid"
+        >
+          Apply
+        </button>
+      </form>
+
+      <div class="chart-container" *ngIf="balanceChartLoading">
+        <div class="skeleton-block" style="height: 160px"></div>
+      </div>
+
+      <div class="alert alert-error" *ngIf="balanceChartError as chartError">{{ chartError }}</div>
+
+      <div class="chart-container" *ngIf="!balanceChartLoading && balanceChartPath">
+        <svg
+          [attr.viewBox]="'0 0 ' + balanceChartWidth + ' ' + balanceChartHeight"
+          [attr.width]="balanceChartWidth"
+          [attr.height]="balanceChartHeight"
+          preserveAspectRatio="none"
+          class="balance-chart-svg"
+          role="img"
+          aria-label="Balance history chart"
+        >
+          <rect
+            x="0"
+            y="0"
+            [attr.width]="balanceChartWidth"
+            [attr.height]="balanceChartHeight"
+            fill="transparent"
+          ></rect>
+          <path
+            [attr.d]="
+              'M ' +
+              balanceChartPadding +
+              ' ' +
+              (balanceChartHeight - balanceChartPadding) +
+              ' H ' +
+              (balanceChartWidth - balanceChartPadding)
+            "
+            stroke="#d1d5db"
+            stroke-width="1"
+            fill="none"
+          ></path>
+          <path
+            [attr.d]="
+              'M ' +
+              balanceChartPadding +
+              ' ' +
+              balanceChartPadding +
+              ' V ' +
+              (balanceChartHeight - balanceChartPadding)
+            "
+            stroke="#d1d5db"
+            stroke-width="1"
+            fill="none"
+          ></path>
+          <text
+            [attr.x]="balanceChartWidth / 2"
+            [attr.y]="balanceChartHeight - 6"
+            fill="#6b7280"
+            font-size="12"
+            text-anchor="middle"
+          >
+            Time
+          </text>
+          <text
+            [attr.x]="12"
+            [attr.y]="balanceChartHeight / 2"
+            fill="#6b7280"
+            font-size="12"
+            text-anchor="middle"
+            [attr.transform]="'rotate(-90 12 ' + balanceChartHeight / 2 + ')'"
+          >
+            Balance
+          </text>
+          <path
+            [attr.d]="balanceChartPath"
+            stroke="var(--accent, #4f46e5)"
+            stroke-width="2"
+            fill="none"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          ></path>
+          <g *ngFor="let pt of balanceChartPoints">
+            <circle
+              [attr.cx]="pt.x"
+              [attr.cy]="pt.y"
+              r="2.5"
+              fill="var(--accent, #4f46e5)"
+            ></circle>
+          </g>
+        </svg>
+      </div>
+      <div
+        class="empty-state"
+        *ngIf="!balanceChartLoading && !balanceChartError && !balanceChartPoints.length"
+      >
+        <p>No balance chart data available.</p>
+      </div>
+    </section>
+
     <section class="transactions-section">
       <h2 class="section-title">Transaction History</h2>
 
@@ -275,18 +393,13 @@
                 {{ tx.type === 'CREDIT' ? 'Credit' : 'Debit' }}
               </span>
 
-              @if (tx.description) {
-                <span
-                  class="tx-sub-info"
-                  style="font-size: 0.85em; color: var(--text-muted, #666); display: block"
-                >
-                  {{ tx.description }}
-                </span>
-              }
-
-              <span class="tx-date" style="display: block; margin-top: 2px">{{
-                formatDate(tx.timestamp)
-              }}</span>
+              <span
+                class="tx-sub-info"
+                *ngIf="tx.description"
+                style="font-size: 0.85em; color: var(--text-muted, #666); display: block"
+              >
+                {{ tx.description }}
+              </span>
             </div>
 
             <div class="tx-right">
@@ -299,26 +412,17 @@
                 {{ tx.currency }}
               </span>
 
-              @if (hasCurrencyConversion(tx.currency, tx.targetCurrency)) {
-                <div class="tx-conversion">
-                  <span>{{ tx.sourceAmount | smartCurrency }} {{ tx.currency }}</span>
-                  <span>&rarr;</span>
-                  <span>{{ tx.convertedAmount | smartCurrency }} {{ tx.targetCurrency }}</span>
-                  <span>Rate {{ tx.exchangeRate | smartCurrency }}</span>
-                </div>
-              }
+              <div
+                class="tx-conversion"
+                *ngIf="hasCurrencyConversion(tx.currency, tx.targetCurrency)"
+              >
+                <span>{{ tx.sourceAmount | smartCurrency }} {{ tx.currency }}</span>
+                <span>&rarr;</span>
+                <span>{{ tx.convertedAmount | smartCurrency }} {{ tx.targetCurrency }}</span>
+                <span>Rate {{ tx.exchangeRate | smartCurrency }}</span>
+              </div>
               <span class="tx-balance">Balance: {{ tx.balance | smartCurrency }}</span>
             </div>
-
-            <svg class="tx-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <polyline
-                points="9 18 15 12 9 6"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
           </div>
         </div>
 

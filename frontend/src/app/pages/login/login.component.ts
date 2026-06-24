@@ -11,7 +11,7 @@ import {
   selectAuthError,
   selectIsAuthenticated,
 } from '../../store/auth/auth.selectors';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { UsersService } from '../../services/users.service';
 import { getApiErrorMessage } from '../../utils/api-error.util';
 
@@ -40,6 +40,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private store: Store,
     private router: Router,
+    private route: ActivatedRoute,
     private usersService: UsersService,
   ) {
     this.loading$ = this.store.select(selectAuthLoading);
@@ -65,7 +66,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((isAuth) => {
         if (isAuth) {
-          this.router.navigate(['/dashboard']);
+          this.router.navigateByUrl(this.getSafeReturnUrl());
         }
       });
   }
@@ -158,5 +159,11 @@ export class LoginComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private getSafeReturnUrl(): string {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+
+    return returnUrl?.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/dashboard';
   }
 }

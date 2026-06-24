@@ -45,52 +45,30 @@
               class="tx-badge"
               [class.credit]="tx.type === 'CREDIT'"
               [class.debit]="tx.type === 'DEBIT'"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                @if (tx.type === 'CREDIT') {
-                  <line
-                    x1="12"
-                    y1="19"
-                    x2="12"
-                    y2="5"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
-                  <polyline
-                    points="5 12 12 5 19 12"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                }
-                @if (tx.type === 'DEBIT') {
-                  <line
-                    x1="12"
-                    y1="5"
-                    x2="12"
-                    y2="19"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
-                  <polyline
-                    points="19 12 12 19 5 12"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                }
-              </svg>
-            </div>
+            ></div>
             <div>
               <p class="page-label">Transaction Overview</p>
               <h1>{{ tx.type }}</h1>
             </div>
           </div>
-          <span class="currency-tag">{{ tx.currency }}</span>
+
+          <div class="header-right" style="display: flex; align-items: center; gap: 12px">
+            <button class="btn-download" (click)="downloadPdf()">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Download
+            </button>
+
+            <span class="currency-tag">{{ tx.currency }}</span>
+          </div>
         </div>
 
         <div class="balance-hero">
@@ -150,7 +128,7 @@
                 >
               </div>
               <div class="detail-card">
-                <span class="detail-label">Target Currency</span>
+                <span class="detail-label">Account Currency</span>
                 <span class="detail-value">{{ tx.targetCurrency }}</span>
               </div>
             </div>
