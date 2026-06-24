@@ -14,10 +14,12 @@ public record TransactionRequest(
 
         @NotNull
         @Positive
-        @Digits(integer = 15, fraction = 4)
+        @Digits(integer = 15, fraction = 8)
         BigDecimal amount,
 
+        @NotNull
         Currency currency,
+
         String description
 ) {
 }
