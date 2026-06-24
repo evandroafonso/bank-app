@@ -553,6 +553,9 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
           this.showToast(this.operationSuccess, 'success');
 
+          this.operationForm.patchValue({ amount: null, description: '' });
+          this.operationForm.get('amount')?.markAsUntouched();
+
           this.store.dispatch(loadAccountDetail({ iban: this.iban }));
 
           this.store.dispatch(clearTransactions());
@@ -587,6 +590,65 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     this.operationError = null;
 
     this.operationSuccess = null;
+  }
+
+  /**
+   * Aplica máscara no padrão europeu: ponto como separador de milhar,
+   * vírgula como separador decimal (ex: 21.000.000.000.000,00).
+   *
+   * Importante: o FormControl 'amount' guarda o valor numérico real (sem máscara),
+   * mas o setValue do Angular re-renderiza o <input> com esse valor numérico puro,
+   * sobrescrevendo qualquer formatação que a gente escreva direto no DOM.
+   * Por isso a máscara é escrita no DOM DEPOIS do setValue, de forma assíncrona
+   * (setTimeout 0), garantindo que seja a última coisa a "ganhar" no input.
+   */
+  sanitizeAmountInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    // 1. remove tudo que não for dígito ou vírgula
+    let raw = input.value.replace(/[^0-9,]/g, '');
+
+    // 2. garante só uma vírgula decimal (mantém a primeira ocorrência)
+    const commaIndex = raw.indexOf(',');
+    if (commaIndex !== -1) {
+      const integerPart = raw.slice(0, commaIndex);
+      const decimalPart = raw.slice(commaIndex + 1).replace(/,/g, '');
+      raw = integerPart + ',' + decimalPart.slice(0, 2); // máximo 2 casas decimais
+    }
+
+    // 3. separa parte inteira e decimal
+    const [integerRaw, decimalRaw] = raw.split(',');
+
+    // 4. remove zeros à esquerda (mantém pelo menos um dígito)
+    const integerDigits = (integerRaw ?? '').replace(/^0+(?=\d)/, '');
+
+    // 5. formata parte inteira com ponto de milhar
+    const formattedInteger = integerDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    // 6. valor exibido (com máscara)
+    const hasTrailingComma = raw.endsWith(',') && decimalRaw === '';
+    const displayValue = hasTrailingComma
+      ? `${formattedInteger},`
+      : decimalRaw !== undefined
+        ? `${formattedInteger},${decimalRaw}`
+        : formattedInteger;
+
+    // 7. valor numérico real para o FormControl (formato JS: ponto decimal)
+    const numericString =
+      integerDigits === '' && !decimalRaw
+        ? ''
+        : `${integerDigits || '0'}.${decimalRaw ?? ''}`.replace(/\.$/, '');
+
+    this.operationForm
+      .get('amount')
+      ?.setValue(numericString === '' ? null : Number(numericString), { emitEvent: false });
+
+    // a escrita no DOM precisa vir DEPOIS do ciclo de detecção do Angular,
+    // senão o value accessor do form sobrescreve com o número puro
+    setTimeout(() => {
+      input.value = displayValue;
+      input.setSelectionRange(displayValue.length, displayValue.length);
+    });
   }
 
   private loadCurrencies(): void {

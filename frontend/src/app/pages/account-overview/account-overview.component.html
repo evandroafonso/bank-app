@@ -150,12 +150,20 @@
               <label class="field">
                 <span>Amount</span>
                 <input
-                  type="number"
+                  type="text"
+                  inputmode="decimal"
                   formControlName="amount"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="10.00"
+                  placeholder="10,00"
+                  (input)="sanitizeAmountInput($event)"
                 />
+                <small
+                  class="field-hint error"
+                  *ngIf="
+                    operationForm.get('amount')?.invalid && operationForm.get('amount')?.touched
+                  "
+                >
+                  Enter a valid positive amount
+                </small>
               </label>
 
               <label class="field">
@@ -188,7 +196,11 @@
             </label>
 
             <div class="operation-actions">
-              <button class="submit-btn" type="submit" [disabled]="operationLoading">
+              <button
+                class="submit-btn"
+                type="submit"
+                [disabled]="operationLoading || operationForm.invalid"
+              >
                 {{
                   operationLoading
                     ? 'Processing...'
@@ -240,7 +252,10 @@
 
       <div class="alert alert-error" *ngIf="balanceChartError as chartError">{{ chartError }}</div>
 
-      <div class="chart-container chart-container--interactive" *ngIf="!balanceChartLoading && balanceChartPoints.length">
+      <div
+        class="chart-container chart-container--interactive"
+        *ngIf="!balanceChartLoading && balanceChartPoints.length"
+      >
         <div
           class="chart-tooltip"
           *ngIf="hoveredChartPoint as tooltipPoint"

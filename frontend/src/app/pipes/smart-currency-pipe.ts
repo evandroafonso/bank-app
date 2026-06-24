@@ -16,7 +16,7 @@ export class SmartCurrencyPipe implements PipeTransform {
       return num.toString();
     }
 
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('de-DE', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num);
