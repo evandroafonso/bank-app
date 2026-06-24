@@ -1,8 +1,13 @@
 package com.assignment.bank.exception.model;
 
 public enum ErrorCode {
-    USER_NOT_FOUND,
-    DUPLICATE_RESOURCE,
+    NOT_FOUND,
     VALIDATION_ERROR,
-    INTERNAL_ERROR
+    BUSINESS_ERROR,
+    FORBIDDEN,
+    INTERNAL_ERROR,
+    DUPLICATE_RESOURCE,
+    INSUFFICIENT_BALANCE,
+    CURRENCY_MISMATCH,
+    TRANSACTION_DENIED
 }

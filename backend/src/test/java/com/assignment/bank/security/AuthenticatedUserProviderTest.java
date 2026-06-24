@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -83,5 +84,25 @@ class AuthenticatedUserProviderTest {
 
         assertThrows(AuthenticationCredentialsNotFoundException.class,
                 () -> authenticatedUserProvider.get());
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenPrincipalIsNotUserDetails() {
+
+        Authentication authentication = mock(Authentication.class);
+
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn("some-principal");
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        IllegalStateException exception =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> authenticatedUserProvider.get()
+                );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("The principal is not an instance of UserDetails.");
     }
 }
