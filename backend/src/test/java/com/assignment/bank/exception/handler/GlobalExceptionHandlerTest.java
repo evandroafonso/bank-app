@@ -105,10 +105,10 @@ class GlobalExceptionHandlerTest {
 
         assertThat(errors).hasSize(1);
 
-        assertThat(errors.get(0).field())
+        assertThat(errors.getFirst().field())
                 .isEqualTo("amount");
 
-        assertThat(errors.get(0).message())
+        assertThat(errors.getFirst().message())
                 .isEqualTo("must be greater than zero");
     }
 
