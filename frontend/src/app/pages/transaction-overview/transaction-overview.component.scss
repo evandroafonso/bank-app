@@ -171,7 +171,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 36px;
 }
 
 .detail-card {
@@ -182,6 +182,13 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-height: 72px;
+}
+
+.detail-card.full-width {
+  grid-column: 1 / -1;
+  height: auto;
+  min-height: 72px;
 }
 
 .detail-label {

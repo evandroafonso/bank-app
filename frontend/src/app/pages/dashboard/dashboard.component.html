@@ -117,7 +117,12 @@
   </main>
 
   <div class="modal-backdrop" *ngIf="isCreateAccountModalOpen" (click)="closeCreateAccountModal()">
-    <section class="account-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <section
+      class="account-modal"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
       <div class="modal-header">
         <div>
           <p class="section-kicker">New Account</p>
@@ -137,12 +142,15 @@
         </button>
       </div>
 
-      <form class="create-account-form" [formGroup]="createAccountForm" (ngSubmit)="createAccount()">
+      <form
+        class="create-account-form"
+        [formGroup]="createAccountForm"
+        (ngSubmit)="createAccount()"
+      >
         <label
           class="field"
           [class.has-error]="
-            createAccountForm.get('currency')?.invalid &&
-            createAccountForm.get('currency')?.touched
+            createAccountForm.get('currency')?.invalid && createAccountForm.get('currency')?.touched
           "
         >
           <span>Currency</span>

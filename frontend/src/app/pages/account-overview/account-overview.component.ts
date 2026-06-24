@@ -41,13 +41,15 @@ import {
 } from '../../store/transactions/transactions.selectors';
 import { TransactionsService, TransactionOperationType } from '../../services/transactions.service';
 import { getApiErrorMessage } from '../../utils/api-error.util';
+import { CurrenciesService, Currency } from '../../services/currencies.service';
+import { SmartCurrencyPipe } from '../../pipes/smart-currency-pipe';
 
 const PAGE_SIZE = 5;
 
 @Component({
   selector: 'app-account-overview',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SidebarComponent],
+  imports: [CommonModule, ReactiveFormsModule, SidebarComponent, SmartCurrencyPipe],
   templateUrl: '../account-overview/account-overview.component.html',
   styleUrls: ['../account-overview/account-overview.component.scss'],
 })
@@ -69,6 +71,9 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
   operationSuccess: string | null = null;
   toastMessage: string | null = null;
   toastType: 'success' | 'error' = 'success';
+  currencies: Currency[] = [];
+  currenciesLoading = false;
+  currenciesError: string | null = null;
 
   private iban!: string;
   private observer!: IntersectionObserver;
@@ -82,12 +87,13 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder,
     private transactionsService: TransactionsService,
+    private currenciesService: CurrenciesService,
   ) {
     this.operationForm = this.fb.group({
       type: ['CREDIT' as TransactionOperationType, Validators.required],
       amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
-      currency: ['EUR', [Validators.required, Validators.minLength(3), Validators.maxLength(3)]],
-      description: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
+      currency: ['', Validators.required],
+      description: ['', [Validators.minLength(3), Validators.maxLength(120)]],
     });
 
     this.account$ = this.store.select(selectAccountDetail);
@@ -104,6 +110,7 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     this.iban = this.route.snapshot.paramMap.get('iban')!;
     this.store.dispatch(loadAccountDetail({ iban: this.iban }));
     this.store.dispatch(loadTransactions({ iban: this.iban, page: 0, size: PAGE_SIZE }));
+    this.loadCurrencies();
   }
 
   ngAfterViewInit(): void {
@@ -171,13 +178,8 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
       iban: this.iban,
       amount: Number(rawValue.amount),
       description: rawValue.description?.trim() ?? '',
-      currency: rawValue.currency?.trim().toUpperCase() ?? 'EUR',
+      currency: rawValue.currency,
     };
-
-    if (!payload.description) {
-      this.operationError = 'Description is required.';
-      return;
-    }
 
     this.setOperationLoading(true);
     this.operationError = null;
@@ -214,6 +216,31 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     this.operationForm.patchValue({ type });
     this.operationError = null;
     this.operationSuccess = null;
+  }
+
+  private loadCurrencies(): void {
+    this.currenciesLoading = true;
+    this.currenciesError = null;
+
+    this.currenciesService
+      .getCurrencies()
+      .pipe(finalize(() => (this.currenciesLoading = false)))
+      .subscribe({
+        next: (currencies) => {
+          this.currencies = currencies;
+
+          if (!this.operationForm.get('currency')?.value && currencies.length > 0) {
+            this.operationForm.patchValue({ currency: currencies[0].code });
+          }
+        },
+        error: (error) => {
+          this.currenciesError = getApiErrorMessage(
+            error,
+            'Unable to load currencies. Please try again.',
+          );
+          this.showToast(this.currenciesError, 'error');
+        },
+      });
   }
 
   private getOperationErrorMessage(
@@ -273,5 +300,9 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  hasCurrencyConversion(sourceCurrency: string, targetCurrency: string): boolean {
+    return sourceCurrency?.toLowerCase() !== targetCurrency?.toLowerCase();
   }
 }

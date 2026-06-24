@@ -87,7 +87,7 @@
             </div>
             <div>
               <p class="page-label">Transaction Overview</p>
-              <h1>{{ tx.description || 'No description available' }}</h1>
+              <h1>{{ tx.type }}</h1>
             </div>
           </div>
           <span class="currency-tag">{{ tx.currency }}</span>
@@ -100,7 +100,7 @@
             [class.credit]="tx.type === 'CREDIT'"
             [class.debit]="tx.type === 'DEBIT'"
           >
-            {{ tx.type === 'CREDIT' ? '+' : '-' }}{{ tx.sourceAmount | number: '1.2-4' }}
+            {{ tx.type === 'CREDIT' ? '+' : '-' }}{{ tx.sourceAmount | smartCurrency }}
             <span class="balance-currency">{{ tx.currency }}</span>
           </div>
         </div>
@@ -120,8 +120,16 @@
           </div>
           <div class="detail-card">
             <span class="detail-label">Balance</span>
-            <span class="detail-value">{{ tx.balance | number: '1.2-4' }} {{ tx.currency }}</span>
+            <span class="detail-value"
+              >{{ tx.balance | smartCurrency }} {{ tx.targetCurrency }}</span
+            >
           </div>
+          @if (tx.description && tx.description.trim() !== '') {
+            <div class="detail-card full-width">
+              <span class="detail-label">Description</span>
+              <span class="detail-value">{{ tx.description }}</span>
+            </div>
+          }
         </div>
 
         @if (hasCurrencyConversion(tx.currency, tx.targetCurrency)) {
@@ -131,14 +139,14 @@
               <div class="detail-card">
                 <span class="detail-label">Exchange Rate</span>
                 <span class="detail-value">
-                  1 {{ tx.currency }} = {{ tx.exchangeRate | number: '1.2-4' }}
+                  1 {{ tx.currency }} = {{ tx.exchangeRate | smartCurrency }}
                   {{ tx.targetCurrency }}
                 </span>
               </div>
               <div class="detail-card">
                 <span class="detail-label">Converted Amount</span>
                 <span class="detail-value"
-                  >{{ tx.convertedAmount | number: '1.2-2' }} {{ tx.targetCurrency }}</span
+                  >{{ tx.convertedAmount | smartCurrency }} {{ tx.targetCurrency }}</span
                 >
               </div>
               <div class="detail-card">

@@ -29,7 +29,6 @@
 
   <app-sidebar />
 
-  <!-- Main -->
   <main class="main-content">
     <button class="btn-back" (click)="goBack()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -44,7 +43,6 @@
       Back to Accounts
     </button>
 
-    <!-- Account error -->
     <div class="alert alert-error" *ngIf="accountError$ | async as error">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
@@ -62,13 +60,11 @@
       {{ error }}
     </div>
 
-    <!-- Account skeleton -->
     <ng-container *ngIf="accountLoading$ | async">
       <div class="skeleton-block" style="height: 60px; margin-bottom: 20px"></div>
       <div class="skeleton-block" style="height: 120px; margin-bottom: 28px"></div>
     </ng-container>
 
-    <!-- Account detail -->
     <ng-container *ngIf="(accountLoading$ | async) === false">
       <ng-container *ngIf="account$ | async as account">
         <div class="page-header">
@@ -98,7 +94,7 @@
         <div class="balance-hero">
           <div class="balance-label">Available Balance</div>
           <div class="balance-amount">
-            {{ account.balance | number: '1.2-4' }}
+            {{ account.balance | smartCurrency }}
             <span class="balance-currency">{{ account.currency }}</span>
           </div>
         </div>
@@ -164,23 +160,30 @@
 
               <label class="field">
                 <span>Currency</span>
-                <input
-                  type="text"
+                <select
                   formControlName="currency"
-                  maxlength="3"
-                  placeholder="EUR"
-                  autocomplete="off"
-                />
+                  [disabled]="currenciesLoading || operationLoading"
+                >
+                  <option value="" disabled>
+                    {{ currenciesLoading ? 'Loading currencies...' : 'Choose a currency' }}
+                  </option>
+                  <option *ngFor="let currency of currencies" [value]="currency.code">
+                    {{ currency.code }} - {{ currency.description }}
+                  </option>
+                </select>
+                <small class="field-hint error" *ngIf="currenciesError as error">
+                  {{ error }}
+                </small>
               </label>
             </div>
 
             <label class="field">
-              <span>Description</span>
+              <span>Description <small style="font-weight: normal; color: #888"></small></span>
               <input
                 type="text"
                 formControlName="description"
                 maxlength="120"
-                placeholder="Test transaction"
+                placeholder="Enter a description (optional)"
               />
             </label>
 
@@ -207,7 +210,6 @@
       </ng-container>
     </ng-container>
 
-    <!-- Transactions section -->
     <section class="transactions-section">
       <h2 class="section-title">Transaction History</h2>
 
@@ -269,8 +271,22 @@
             </div>
 
             <div class="tx-info">
-              <span class="tx-description">{{ tx.description }}</span>
-              <span class="tx-date">{{ formatDate(tx.timestamp) }}</span>
+              <span class="tx-description" style="font-weight: 600; display: block">
+                {{ tx.type === 'CREDIT' ? 'Credit' : 'Debit' }}
+              </span>
+
+              @if (tx.description) {
+                <span
+                  class="tx-sub-info"
+                  style="font-size: 0.85em; color: var(--text-muted, #666); display: block"
+                >
+                  {{ tx.description }}
+                </span>
+              }
+
+              <span class="tx-date" style="display: block; margin-top: 2px">{{
+                formatDate(tx.timestamp)
+              }}</span>
             </div>
 
             <div class="tx-right">
@@ -279,16 +295,19 @@
                 [class.credit]="tx.type === 'CREDIT'"
                 [class.debit]="tx.type === 'DEBIT'"
               >
-                {{ tx.type === 'CREDIT' ? '+' : '-' }}{{ tx.sourceAmount | number: '1.2-2' }}
+                {{ tx.type === 'CREDIT' ? '+' : '-' }}{{ tx.sourceAmount | smartCurrency }}
                 {{ tx.currency }}
               </span>
-              <div class="tx-conversion">
-                <span>{{ tx.sourceAmount | number: '1.2-2' }} {{ tx.currency }}</span>
-                <span>&rarr;</span>
-                <span>{{ tx.convertedAmount | number: '1.2-2' }} {{ tx.targetCurrency }}</span>
-                <span>Rate {{ tx.exchangeRate | number: '1.2-4' }}</span>
-              </div>
-              <span class="tx-balance">Balance: {{ tx.balance | number: '1.2-2' }}</span>
+
+              @if (hasCurrencyConversion(tx.currency, tx.targetCurrency)) {
+                <div class="tx-conversion">
+                  <span>{{ tx.sourceAmount | smartCurrency }} {{ tx.currency }}</span>
+                  <span>&rarr;</span>
+                  <span>{{ tx.convertedAmount | smartCurrency }} {{ tx.targetCurrency }}</span>
+                  <span>Rate {{ tx.exchangeRate | smartCurrency }}</span>
+                </div>
+              }
+              <span class="tx-balance">Balance: {{ tx.balance | smartCurrency }}</span>
             </div>
 
             <svg class="tx-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -310,10 +329,8 @@
         </ng-template>
       </ng-container>
 
-      <!-- Infinite scroll sentinel -->
       <div #scrollSentinel class="scroll-sentinel"></div>
 
-      <!-- Loading more spinner -->
       <div class="loading-more" *ngIf="transactionsLoading$ | async">
         <svg class="spinner" width="22" height="22" viewBox="0 0 24 24" fill="none">
           <circle
@@ -329,7 +346,6 @@
         <span>Loading more transactions...</span>
       </div>
 
-      <!-- End of list -->
       <div class="end-of-list" *ngIf="(isLastPage$ | async) && (transactions$ | async)?.length">
         All transactions have been loaded.
       </div>

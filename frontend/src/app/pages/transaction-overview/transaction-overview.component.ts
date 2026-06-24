@@ -16,11 +16,12 @@ import {
   selectTransactionDetailError,
   selectTransactionDetailLoading,
 } from '../../store/transaction-detail/transaction-detail.selectors';
+import { SmartCurrencyPipe } from '../../pipes/smart-currency-pipe';
 
 @Component({
   selector: 'app-transaction-overview',
   standalone: true,
-  imports: [CommonModule, SidebarComponent],
+  imports: [CommonModule, SidebarComponent, SmartCurrencyPipe],
   templateUrl: './transaction-overview.component.html',
   styleUrls: ['./transaction-overview.component.scss'],
 })
