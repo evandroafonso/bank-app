@@ -235,12 +235,22 @@
       </form>
 
       <div class="chart-container" *ngIf="balanceChartLoading">
-        <div class="skeleton-block" style="height: 160px"></div>
+        <div class="skeleton-block" style="height: 320px"></div>
       </div>
 
       <div class="alert alert-error" *ngIf="balanceChartError as chartError">{{ chartError }}</div>
 
-      <div class="chart-container" *ngIf="!balanceChartLoading && balanceChartPath">
+      <div class="chart-container chart-container--interactive" *ngIf="!balanceChartLoading && balanceChartPoints.length">
+        <div
+          class="chart-tooltip"
+          *ngIf="hoveredChartPoint as tooltipPoint"
+          [style.left.%]="getChartTooltipLeft(tooltipPoint)"
+          [style.top.%]="getChartTooltipTop(tooltipPoint)"
+        >
+          <span class="chart-tooltip__date">{{ tooltipPoint.label }}</span>
+          <span class="chart-tooltip__balance">{{ tooltipPoint.balanceLabel }}</span>
+        </div>
+
         <svg
           [attr.viewBox]="'0 0 ' + balanceChartWidth + ' ' + balanceChartHeight"
           [attr.width]="balanceChartWidth"
@@ -257,14 +267,36 @@
             [attr.height]="balanceChartHeight"
             fill="transparent"
           ></rect>
+
+          <g class="chart-grid">
+            <line
+              *ngFor="let tick of balanceChartYTicks"
+              [attr.x1]="balanceChartPaddingLeft"
+              [attr.y1]="tick.y"
+              [attr.x2]="balanceChartWidth - balanceChartPaddingRight"
+              [attr.y2]="tick.y"
+              stroke="#e5e7eb"
+              stroke-width="1"
+            ></line>
+            <line
+              *ngFor="let tick of balanceChartXTicks"
+              [attr.x1]="tick.x"
+              [attr.y1]="balanceChartPaddingTop"
+              [attr.x2]="tick.x"
+              [attr.y2]="balanceChartHeight - balanceChartPaddingBottom"
+              stroke="#e5e7eb"
+              stroke-width="1"
+            ></line>
+          </g>
+
           <path
             [attr.d]="
               'M ' +
-              balanceChartPadding +
+              balanceChartPaddingLeft +
               ' ' +
-              (balanceChartHeight - balanceChartPadding) +
+              (balanceChartHeight - balanceChartPaddingBottom) +
               ' H ' +
-              (balanceChartWidth - balanceChartPadding)
+              (balanceChartWidth - balanceChartPaddingRight)
             "
             stroke="#d1d5db"
             stroke-width="1"
@@ -273,19 +305,43 @@
           <path
             [attr.d]="
               'M ' +
-              balanceChartPadding +
+              balanceChartPaddingLeft +
               ' ' +
-              balanceChartPadding +
+              balanceChartPaddingTop +
               ' V ' +
-              (balanceChartHeight - balanceChartPadding)
+              (balanceChartHeight - balanceChartPaddingBottom)
             "
             stroke="#d1d5db"
             stroke-width="1"
             fill="none"
           ></path>
+
+          <g class="chart-axis-labels">
+            <text
+              *ngFor="let tick of balanceChartYTicks"
+              [attr.x]="balanceChartPaddingLeft - 8"
+              [attr.y]="tick.y + 4"
+              fill="#6b7280"
+              font-size="11"
+              text-anchor="end"
+            >
+              {{ tick.label }}
+            </text>
+            <text
+              *ngFor="let tick of balanceChartXTicks"
+              [attr.x]="tick.x"
+              [attr.y]="balanceChartHeight - balanceChartPaddingBottom + 18"
+              fill="#6b7280"
+              font-size="11"
+              text-anchor="middle"
+            >
+              {{ tick.label }}
+            </text>
+          </g>
+
           <text
             [attr.x]="balanceChartWidth / 2"
-            [attr.y]="balanceChartHeight - 6"
+            [attr.y]="balanceChartHeight - 4"
             fill="#6b7280"
             font-size="12"
             text-anchor="middle"
@@ -293,15 +349,16 @@
             Time
           </text>
           <text
-            [attr.x]="12"
+            [attr.x]="14"
             [attr.y]="balanceChartHeight / 2"
             fill="#6b7280"
             font-size="12"
             text-anchor="middle"
-            [attr.transform]="'rotate(-90 12 ' + balanceChartHeight / 2 + ')'"
+            [attr.transform]="'rotate(-90 14 ' + balanceChartHeight / 2 + ')'"
           >
             Balance
           </text>
+
           <path
             [attr.d]="balanceChartPath"
             stroke="var(--accent, #4f46e5)"
@@ -310,12 +367,29 @@
             stroke-linejoin="round"
             stroke-linecap="round"
           ></path>
-          <g *ngFor="let pt of balanceChartPoints">
+
+          <g
+            *ngFor="let pt of balanceChartPoints"
+            class="chart-point"
+            (mouseenter)="onChartPointHover(pt)"
+            (mouseleave)="onChartPointLeave()"
+          >
             <circle
               [attr.cx]="pt.x"
               [attr.cy]="pt.y"
-              r="2.5"
+              r="10"
+              fill="transparent"
+              class="chart-point-hit"
+            >
+              <title>{{ pt.label }} — {{ pt.balanceLabel }}</title>
+            </circle>
+            <circle
+              [attr.cx]="pt.x"
+              [attr.cy]="pt.y"
+              [attr.r]="hoveredChartPoint === pt ? 5 : 3"
               fill="var(--accent, #4f46e5)"
+              class="chart-point-visible"
+              [class.chart-point-active]="hoveredChartPoint === pt"
             ></circle>
           </g>
         </svg>

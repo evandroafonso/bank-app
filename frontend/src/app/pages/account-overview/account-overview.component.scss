@@ -257,6 +257,60 @@ h1 {
   }
 }
 
+.chart-container {
+  width: 100%;
+
+  &--interactive {
+    position: relative;
+  }
+}
+
+.balance-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-point-hit {
+  cursor: pointer;
+}
+
+.chart-point-visible {
+  pointer-events: none;
+}
+
+.chart-point-active {
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, calc(-100% - 10px));
+  min-width: 120px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #111827;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.18);
+  pointer-events: none;
+  text-align: center;
+
+  &__date {
+    display: block;
+    font-size: 0.75rem;
+    color: #d1d5db;
+    margin-bottom: 4px;
+  }
+
+  &__balance {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+}
+
 .section-title {
   font-size: 1.1rem;
   font-weight: 700;

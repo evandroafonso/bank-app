@@ -121,13 +121,33 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
   balanceChartPath: string | null = null;
 
-  balanceChartPoints: Array<{ x: number; y: number; label: string; balance: number }> = [];
+  balanceChartPoints: Array<{
+    x: number;
+    y: number;
+    label: string;
+    balance: number;
+    balanceLabel: string;
+  }> = [];
+
+  balanceChartXTicks: Array<{ x: number; label: string }> = [];
+
+  balanceChartYTicks: Array<{ y: number; label: string }> = [];
+
+  hoveredChartPoint: AccountOverviewComponent['balanceChartPoints'][number] | null = null;
 
   balanceChartWidth = 720;
 
-  balanceChartHeight = 160;
+  balanceChartHeight = 320;
 
-  balanceChartPadding = 24;
+  balanceChartPaddingLeft = 64;
+
+  balanceChartPaddingRight = 20;
+
+  balanceChartPaddingTop = 20;
+
+  balanceChartPaddingBottom = 44;
+
+  private balanceChartRequestId = 0;
 
   private iban!: string;
 
@@ -182,10 +202,12 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
     this.totalElements$ = this.store.select(selectTotalElements);
 
-    this.chartFilterForm = this.fb.group({
-      startDate: ['2025-06-01', Validators.required],
+    const { startDate, endDate } = this.getDefaultChartDateRange();
 
-      endDate: ['2026-06-30', Validators.required],
+    this.chartFilterForm = this.fb.group({
+      startDate: [startDate, Validators.required],
+
+      endDate: [endDate, Validators.required],
     });
   }
 
@@ -230,23 +252,29 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
     const endDate = this.chartFilterForm.get('endDate')?.value;
 
+    this.loadBalanceChart(this.iban, `${startDate}T00:00:00`, `${endDate}T23:59:59`);
+  }
+
+  private resetBalanceChartVisualState(): void {
     this.balanceChartPath = null;
 
     this.balanceChartPoints = [];
 
-    this.cdr.detectChanges();
+    this.balanceChartXTicks = [];
 
-    this.loadBalanceChart(this.iban, `${startDate}T00:00:00`, `${endDate}T23:59:59`);
+    this.balanceChartYTicks = [];
+
+    this.hoveredChartPoint = null;
   }
 
   private loadBalanceChart(iban: string | number, startDate: string, endDate: string): void {
+    const requestId = ++this.balanceChartRequestId;
+
     this.balanceChartLoading = true;
 
     this.balanceChartError = null;
 
-    this.balanceChartPath = null;
-
-    this.balanceChartPoints = [];
+    this.resetBalanceChartVisualState();
 
     this.cdr.detectChanges();
 
@@ -256,6 +284,10 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
       .pipe(
         finalize(() => {
+          if (requestId !== this.balanceChartRequestId) {
+            return;
+          }
+
           this.balanceChartLoading = false;
 
           this.cdr.detectChanges();
@@ -264,6 +296,10 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
       .subscribe({
         next: (data) => {
+          if (requestId !== this.balanceChartRequestId) {
+            return;
+          }
+
           this.balanceChartData = (data || [])
 
             .slice()
@@ -276,6 +312,10 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
         },
 
         error: (err) => {
+          if (requestId !== this.balanceChartRequestId) {
+            return;
+          }
+
           // eslint-disable-next-line no-console
 
           console.error('[AccountOverview] balance chart error:', err);
@@ -293,9 +333,7 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     const data = this.balanceChartData;
 
     if (!data || data.length === 0) {
-      this.balanceChartPath = null;
-
-      this.balanceChartPoints = [];
+      this.resetBalanceChartVisualState();
 
       return;
     }
@@ -304,7 +342,17 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
     const h = this.balanceChartHeight;
 
-    const p = this.balanceChartPadding;
+    const plotLeft = this.balanceChartPaddingLeft;
+
+    const plotRight = w - this.balanceChartPaddingRight;
+
+    const plotTop = this.balanceChartPaddingTop;
+
+    const plotBottom = h - this.balanceChartPaddingBottom;
+
+    const plotWidth = plotRight - plotLeft;
+
+    const plotHeight = plotBottom - plotTop;
 
     const times = data.map((d) => new Date(d.timestamp).getTime());
 
@@ -319,22 +367,36 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     const bMax = Math.max(...balances);
 
     const xFor = (t: number) =>
-      tMax === tMin ? w / 2 : p + ((t - tMin) / (tMax - tMin)) * (w - 2 * p);
+      tMax === tMin ? plotLeft + plotWidth / 2 : plotLeft + ((t - tMin) / (tMax - tMin)) * plotWidth;
 
     const yFor = (b: number) =>
-      bMax === bMin ? h / 2 : p + (1 - (b - bMin) / (bMax - bMin)) * (h - 2 * p);
+      bMax === bMin ? plotTop + plotHeight / 2 : plotTop + (1 - (b - bMin) / (bMax - bMin)) * plotHeight;
 
     const points = data.map((d) => {
-      const x = Number(xFor(new Date(d.timestamp).getTime()));
+      const balance = Number(d.balance);
 
-      const y = Number(yFor(Number(d.balance)));
-
-      return { x, y, label: this.formatDate(d.timestamp), balance: Number(d.balance) };
+      return {
+        x: xFor(new Date(d.timestamp).getTime()),
+        y: yFor(balance),
+        label: this.formatDate(d.timestamp),
+        balance,
+        balanceLabel: this.formatChartBalance(balance),
+      };
     });
 
     this.balanceChartPoints = points;
 
-    // build smooth-ish path (just a polyline path)
+    const tickCount = 5;
+
+    this.balanceChartXTicks = this.buildLinearTicks(tMin, tMax, tickCount).map((value) => ({
+      x: xFor(value),
+      label: this.formatChartAxisDate(value),
+    }));
+
+    this.balanceChartYTicks = this.buildLinearTicks(bMin, bMax, tickCount).map((value) => ({
+      y: yFor(value),
+      label: this.formatChartBalance(value),
+    }));
 
     const d = points
 
@@ -343,8 +405,30 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
       .join(' ');
 
     this.balanceChartPath = d;
+  }
 
-    Promise.resolve().then(() => this.cdr.detectChanges());
+  onChartPointHover(point: AccountOverviewComponent['balanceChartPoints'][number]): void {
+    if (this.hoveredChartPoint === point) {
+      return;
+    }
+
+    this.hoveredChartPoint = point;
+  }
+
+  onChartPointLeave(): void {
+    if (!this.hoveredChartPoint) {
+      return;
+    }
+
+    this.hoveredChartPoint = null;
+  }
+
+  getChartTooltipLeft(point: { x: number }): number {
+    return (point.x / this.balanceChartWidth) * 100;
+  }
+
+  getChartTooltipTop(point: { y: number }): number {
+    return (point.y / this.balanceChartHeight) * 100;
   }
 
   ngAfterViewInit(): void {
@@ -586,5 +670,52 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
   hasCurrencyConversion(sourceCurrency: string, targetCurrency: string): boolean {
     return sourceCurrency?.toLowerCase() !== targetCurrency?.toLowerCase();
+  }
+
+  private getDefaultChartDateRange(): { startDate: string; endDate: string } {
+    const endDate = new Date();
+    const startDate = new Date(endDate);
+    startDate.setFullYear(startDate.getFullYear() - 1);
+
+    return {
+      startDate: this.toDateInputValue(startDate),
+      endDate: this.toDateInputValue(endDate),
+    };
+  }
+
+  private toDateInputValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private buildLinearTicks(min: number, max: number, count: number): number[] {
+    if (count <= 1 || min === max) {
+      return [min];
+    }
+
+    const step = (max - min) / (count - 1);
+
+    return Array.from({ length: count }, (_, index) => min + step * index);
+  }
+
+  private formatChartBalance(value: number): string {
+    if (value > 0 && value < 0.01) {
+      return value.toString();
+    }
+
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
+  private formatChartAxisDate(timestamp: number): string {
+    return new Date(timestamp).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'short',
+    });
   }
 }
