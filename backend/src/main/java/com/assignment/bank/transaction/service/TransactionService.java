@@ -7,6 +7,7 @@ import com.assignment.bank.exception.CurrencyMismatchException;
 import com.assignment.bank.exception.InsufficientBalanceException;
 import com.assignment.bank.exception.NotFoundException;
 import com.assignment.bank.security.AuthenticatedUserProvider;
+import com.assignment.bank.transaction.dto.BalanceChartPointResponse;
 import com.assignment.bank.transaction.dto.TransactionRequest;
 import com.assignment.bank.transaction.dto.TransactionResponse;
 import com.assignment.bank.transaction.entity.Transaction;
@@ -20,6 +21,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class TransactionService {
@@ -86,7 +90,7 @@ public class TransactionService {
     }
 
     private void validateTransaction(TransactionType type, Currency requestCurrency, Account account, BigDecimal amount, BigDecimal requestAmount) {
-        fraudDetectorService.check(requestAmount);
+        fraudDetectorService.check(requestAmount, account.getIban());
         if (type == TransactionType.DEBIT) {
             validateCurrencyMatch(requestCurrency, account.getCurrency());
             validateSufficientBalance(account, amount);
@@ -144,5 +148,19 @@ public class TransactionService {
         Account account = getAccount(iban);
         return transactionRepository.findByAccountOrderByCreatedAtDesc(account, pageable)
                 .map(transactionMapper::mapToResponse);
+    }
+
+    public TransactionResponse getTransaction(UUID uuid) {
+        Transaction transaction = transactionRepository.findByUuid(uuid)
+                .orElseThrow(() -> new NotFoundException("Transaction with uuid " + uuid + " not found"));
+        return transactionMapper.mapToResponse(transaction);
+    }
+
+    public List<BalanceChartPointResponse> getBalanceChartData(String iban, LocalDateTime start, LocalDateTime end) {
+        List<Transaction> transactions = transactionRepository.findByAccount_IbanAndCreatedAtBetweenOrderByCreatedAtAsc(iban, start, end);
+
+        return transactions.stream()
+                .map(t -> new BalanceChartPointResponse(t.getCreatedAt(), t.getBalanceAfter()))
+                .toList();
     }
 }

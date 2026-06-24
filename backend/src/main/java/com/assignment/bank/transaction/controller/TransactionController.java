@@ -1,12 +1,18 @@
 package com.assignment.bank.transaction.controller;
 
+import com.assignment.bank.transaction.dto.BalanceChartPointResponse;
 import com.assignment.bank.transaction.dto.TransactionRequest;
 import com.assignment.bank.transaction.dto.TransactionResponse;
 import com.assignment.bank.transaction.service.TransactionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -37,6 +43,20 @@ public class TransactionController {
             @RequestParam(defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(transactionService.getHistory(iban, PageRequest.of(page, size)));
+    }
+
+    @GetMapping("/{uuid}")
+    public ResponseEntity<TransactionResponse> getTransaction(@PathVariable UUID uuid) {
+        return ResponseEntity.ok(transactionService.getTransaction(uuid));
+    }
+
+    @GetMapping("/balance-chart")
+    public ResponseEntity<List<BalanceChartPointResponse>> getBalanceChartData(
+            @RequestParam String iban,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        List<BalanceChartPointResponse> chartData = transactionService.getBalanceChartData(iban, startDate, endDate);
+        return ResponseEntity.ok(chartData);
     }
 
 }

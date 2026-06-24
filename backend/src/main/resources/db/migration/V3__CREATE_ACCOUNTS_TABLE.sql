@@ -4,7 +4,7 @@ CREATE TABLE accounts
     uuid       UUID           NOT NULL UNIQUE,
     iban       VARCHAR(50)    NOT NULL UNIQUE,
     currency   VARCHAR(10)    NOT NULL,
-    balance    DECIMAL(19, 4) NOT NULL,
+    balance    DECIMAL(19, 8) NOT NULL,
     user_id    BIGINT         NOT NULL,
     created_at TIMESTAMP      NOT NULL,
     updated_at TIMESTAMP      NOT NULL,

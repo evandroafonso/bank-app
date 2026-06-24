@@ -1,5 +1,6 @@
 package com.assignment.bank.account.service;
 
+import com.assignment.bank.account.dto.AccountBalanceResponse;
 import com.assignment.bank.account.dto.AccountRequest;
 import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.entity.Account;
@@ -139,6 +140,37 @@ class AccountServiceTest {
         when(accountRepository.findByIbanAndOwner(iban, user)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> accountService.findByIban(iban));
+
+        verify(accountRepository).findByIbanAndOwner(iban, user);
+        verifyNoInteractions(accountMapper);
+    }
+
+    @Test
+    void shouldGetBalanceSuccessfully() {
+        User user = mockUser();
+        String iban = "EE12345678901234";
+        Account account = mock(Account.class);
+        AccountBalanceResponse response = mock(AccountBalanceResponse.class);
+
+        when(accountRepository.findByIbanAndOwner(iban, user)).thenReturn(Optional.of(account));
+        when(accountMapper.mapToBalanceResponse(account)).thenReturn(response);
+
+        AccountBalanceResponse result = accountService.getBalance(iban);
+
+        assertNotNull(result);
+        assertEquals(response, result);
+        verify(accountRepository).findByIbanAndOwner(iban, user);
+        verify(accountMapper).mapToBalanceResponse(account);
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenGetBalanceForNonExistentAccount() {
+        User user = mockUser();
+        String iban = "INVALID-IBAN";
+
+        when(accountRepository.findByIbanAndOwner(iban, user)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> accountService.getBalance(iban));
 
         verify(accountRepository).findByIbanAndOwner(iban, user);
         verifyNoInteractions(accountMapper);

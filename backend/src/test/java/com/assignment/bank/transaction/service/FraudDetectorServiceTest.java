@@ -15,6 +15,7 @@ import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,7 +39,7 @@ class FraudDetectorServiceTest {
         var jsonNode = new ObjectMapper().readTree("{\"code\":200,\"description\":\"OK\"}");
         when(objectMapper.readTree("{\"code\":200,\"description\":\"OK\"}")).thenReturn(jsonNode);
 
-        assertDoesNotThrow(() -> fraudDetectorService.check(new BigDecimal("100.00")));
+        assertDoesNotThrow(() -> fraudDetectorService.check(new BigDecimal("100.00"), "EE382200221020145685"));
 
         verify(httpClient).send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class));
     }
@@ -53,7 +54,7 @@ class FraudDetectorServiceTest {
         when(objectMapper.readTree("{\"code\":403,\"description\":\"Forbidden\"}")).thenReturn(jsonNode);
 
         FraudDetectedException ex = assertThrows(FraudDetectedException.class,
-                () -> fraudDetectorService.check(new BigDecimal("5")));
+                () -> fraudDetectorService.check(new BigDecimal("5"), "EE382200221020145685"));
 
         assertEquals("Transaction blocked: fraud detected for amount 5", ex.getMessage());
     }
@@ -68,7 +69,7 @@ class FraudDetectorServiceTest {
         when(objectMapper.readTree("{\"code\":403,\"description\":\"Forbidden\"}")).thenReturn(jsonNode);
 
         assertThrows(FraudDetectedException.class,
-                () -> fraudDetectorService.check(new BigDecimal("100.00")));
+                () -> fraudDetectorService.check(new BigDecimal("100.00"), "EE382200221020145685"));
     }
 
     @Test
@@ -77,7 +78,7 @@ class FraudDetectorServiceTest {
                 .thenThrow(new RuntimeException("Connection refused"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> fraudDetectorService.check(new BigDecimal("100.00")));
+                () -> fraudDetectorService.check(new BigDecimal("100.00"), "EE382200221020145685"));
 
         assertEquals("Fraud check service unavailable", ex.getMessage());
     }
@@ -90,7 +91,7 @@ class FraudDetectorServiceTest {
         when(objectMapper.readTree("invalid json")).thenThrow(new RuntimeException("Invalid JSON"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> fraudDetectorService.check(new BigDecimal("100.00")));
+                () -> fraudDetectorService.check(new BigDecimal("100.00"), "EE382200221020145685"));
 
         assertEquals("Fraud check service unavailable", ex.getMessage());
     }
@@ -105,7 +106,7 @@ class FraudDetectorServiceTest {
         when(objectMapper.readTree("{\"code\":403,\"description\":\"Forbidden\"}")).thenReturn(jsonNode);
 
         assertThrows(FraudDetectedException.class,
-                () -> fraudDetectorService.check(new BigDecimal("5")));
+                () -> fraudDetectorService.check(new BigDecimal("5"), "EE382200221020145685"));
 
         verify(httpClient).send(
                 argThat(req -> req.uri().toString().equals("https://httpstatuses.maor.io/403")),
@@ -122,7 +123,7 @@ class FraudDetectorServiceTest {
         var jsonNode = new ObjectMapper().readTree("{\"code\":200,\"description\":\"OK\"}");
         when(objectMapper.readTree("{\"code\":200,\"description\":\"OK\"}")).thenReturn(jsonNode);
 
-        assertDoesNotThrow(() -> fraudDetectorService.check(new BigDecimal("99.00")));
+        assertDoesNotThrow(() -> fraudDetectorService.check(new BigDecimal("99.00"), "EE382200221020145685"));
 
         verify(httpClient).send(
                 argThat(req -> req.uri().toString().equals("https://httpstatuses.maor.io/200")),

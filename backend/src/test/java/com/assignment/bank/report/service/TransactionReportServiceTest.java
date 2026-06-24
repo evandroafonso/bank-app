@@ -1,11 +1,10 @@
 package com.assignment.bank.report.service;
 
-import com.assignment.bank.account.enums.Currency;
 import com.assignment.bank.report.dto.TransactionReportItemResponse;
 import com.assignment.bank.report.dto.TransactionReportRequest;
 import com.assignment.bank.report.dto.TransactionReportResponse;
+import com.assignment.bank.report.mapper.TransactionReportMapper;
 import com.assignment.bank.transaction.entity.Transaction;
-import com.assignment.bank.transaction.enums.TransactionType;
 import com.assignment.bank.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,12 +13,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,28 +30,23 @@ class TransactionReportServiceTest {
     @Mock
     private TransactionPdfService pdfService;
 
+    @Mock
+    private TransactionReportMapper reportMapper;
+
     @InjectMocks
     private TransactionReportService service;
 
     @Test
     void shouldGenerateReportSuccessfully() {
-
         UUID uuid = UUID.randomUUID();
-
         Transaction transaction = mock(Transaction.class);
 
         when(transaction.getUuid()).thenReturn(uuid);
-        when(transaction.getSourceAmount()).thenReturn(new BigDecimal("100.00"));
-        when(transaction.getConvertedAmount()).thenReturn(new BigDecimal("100.00"));
-        when(transaction.getExchangeRate()).thenReturn(new BigDecimal("1.00"));
-        when(transaction.getSourceCurrency()).thenReturn(Currency.EUR);
-        when(transaction.getTargetCurrency()).thenReturn(Currency.EUR);
-        when(transaction.getBalanceAfter()).thenReturn(new BigDecimal("500.00"));
-        when(transaction.getType()).thenReturn(TransactionType.CREDIT);
-        when(transaction.getDescription()).thenReturn("Test transaction");
-        when(transaction.getCreatedAt()).thenReturn(LocalDateTime.now());
-
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(transaction));
+
+        TransactionReportItemResponse mockMappedItem = mock(TransactionReportItemResponse.class);
+        when(reportMapper.mapToReportItem(transaction)).thenReturn(mockMappedItem);
+
         when(pdfService.generatePdf(any(TransactionReportItemResponse.class)))
                 .thenReturn("pdf-content".getBytes());
 
@@ -65,12 +59,12 @@ class TransactionReportServiceTest {
         assertEquals("transaction-" + uuid + ".pdf", response.fileName());
 
         verify(repository).findByUuid(uuid);
+        verify(reportMapper).mapToReportItem(transaction);
         verify(pdfService).generatePdf(any(TransactionReportItemResponse.class));
     }
 
     @Test
     void shouldThrowExceptionWhenTransactionNotFound() {
-
         UUID uuid = UUID.randomUUID();
 
         when(repository.findByUuid(uuid)).thenReturn(Optional.empty());
@@ -82,31 +76,29 @@ class TransactionReportServiceTest {
                 () -> service.generate(request)
         );
 
-        assertEquals("Transaction not found", ex.getMessage());
+        assertTrue(ex.getMessage().contains("Transaction not found"));
+        assertTrue(ex.getMessage().contains(uuid.toString()));
 
         verify(repository).findByUuid(uuid);
+        verifyNoInteractions(reportMapper);
         verifyNoInteractions(pdfService);
     }
 
     @Test
     void shouldMapTransactionCorrectlyBeforeGeneratingPdf() {
-
         UUID uuid = UUID.randomUUID();
-
         Transaction transaction = mock(Transaction.class);
 
-        when(transaction.getUuid()).thenReturn(uuid);
-        when(transaction.getSourceAmount()).thenReturn(new BigDecimal("150.00"));
-        when(transaction.getConvertedAmount()).thenReturn(new BigDecimal("150.00"));
-        when(transaction.getExchangeRate()).thenReturn(new BigDecimal("1.00"));
-        when(transaction.getSourceCurrency()).thenReturn(Currency.EUR);
-        when(transaction.getTargetCurrency()).thenReturn(Currency.USD);
-        when(transaction.getBalanceAfter()).thenReturn(new BigDecimal("350.00"));
-        when(transaction.getType()).thenReturn(TransactionType.DEBIT);
-        when(transaction.getDescription()).thenReturn("Withdrawal");
-        when(transaction.getCreatedAt()).thenReturn(LocalDateTime.now());
-
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(transaction));
+
+        TransactionReportItemResponse mockMappedItem = mock(TransactionReportItemResponse.class);
+        when(mockMappedItem.uuid()).thenReturn(uuid);
+        when(mockMappedItem.sourceAmount()).thenReturn(new BigDecimal("150.00"));
+        when(mockMappedItem.targetCurrency()).thenReturn("USD");
+        when(mockMappedItem.type()).thenReturn("DEBIT");
+        when(mockMappedItem.description()).thenReturn("Withdrawal");
+
+        when(reportMapper.mapToReportItem(transaction)).thenReturn(mockMappedItem);
 
         when(pdfService.generatePdf(any(TransactionReportItemResponse.class)))
                 .thenReturn("pdf".getBytes());

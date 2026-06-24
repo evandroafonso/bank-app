@@ -1,5 +1,6 @@
 package com.assignment.bank.account.controller;
 
+import com.assignment.bank.account.dto.AccountBalanceResponse;
 import com.assignment.bank.account.dto.AccountRequest;
 import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.enums.Currency;
@@ -144,6 +145,37 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$").isEmpty());
 
         verify(accountService, times(1)).findAll();
+    }
+
+    @Test
+    void shouldGetBalanceSuccessfully() throws Exception {
+        String iban = "EE12345678901234";
+        AccountBalanceResponse response = new AccountBalanceResponse(iban, "EUR", new BigDecimal("1500.50"));
+
+        when(accountService.getBalance(iban)).thenReturn(response);
+
+        mockMvc.perform(get("/api/accounts/balance/{iban}", iban)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.iban").value(iban))
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.balance").value(1500.50));
+
+        verify(accountService, times(1)).getBalance(iban);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenGetBalanceForNonExistentAccount() throws Exception {
+        String iban = "INVALID-IBAN";
+
+        when(accountService.getBalance(iban))
+                .thenThrow(new com.assignment.bank.exception.NotFoundException("Account not found"));
+
+        mockMvc.perform(get("/api/accounts/balance/{iban}", iban)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+
+        verify(accountService, times(1)).getBalance(iban);
     }
 
 }

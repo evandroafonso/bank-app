@@ -3,6 +3,7 @@ package com.assignment.bank.transaction.service;
 import com.assignment.bank.exception.FraudDetectedException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+@Slf4j
 @Component
 public class FraudDetectorService {
 
@@ -26,7 +28,7 @@ public class FraudDetectorService {
         this.objectMapper = objectMapper;
     }
 
-    public void check(BigDecimal amount) {
+    public void check(BigDecimal amount, String iban) {
         String url = isFraudAmount(amount) ? FRAUD_URL : SUCCESS_URL;
 
         try {
@@ -44,6 +46,7 @@ public class FraudDetectorService {
             }
 
         } catch (FraudDetectedException ex) {
+            log.warn("Fraud detected. Transaction was not completed due to suspected fraudulent activity. Account IBAN: {}", iban);
             throw ex;
         } catch (Exception ex) {
             throw new IllegalStateException("Fraud check service unavailable", ex);

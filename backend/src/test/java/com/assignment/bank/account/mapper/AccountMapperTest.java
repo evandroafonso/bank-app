@@ -1,7 +1,9 @@
 package com.assignment.bank.account.mapper;
 
+import com.assignment.bank.account.dto.AccountBalanceResponse;
 import com.assignment.bank.account.dto.AccountResponse;
 import com.assignment.bank.account.entity.Account;
+import com.assignment.bank.account.enums.Currency;
 import com.assignment.bank.user.dto.UserResponse;
 import com.assignment.bank.user.entity.User;
 import com.assignment.bank.user.mapper.UserMapper;
@@ -59,5 +61,28 @@ class AccountMapperTest {
         AccountResponse response = accountMapper.mapToResponse(null);
         assertNull(response);
         verifyNoInteractions(userMapper);
+    }
+
+    @Test
+    void shouldMapAccountToBalanceResponseSuccessfully() {
+        Account account = Account.builder()
+                .iban("EE12345678901234")
+                .currency(Currency.EUR)
+                .balance(new BigDecimal("1500.50"))
+                .build();
+
+        AccountBalanceResponse response = accountMapper.mapToBalanceResponse(account);
+
+        assertNotNull(response);
+        assertEquals("EE12345678901234", response.iban());
+        assertEquals("EUR", response.currency());
+        assertEquals(new BigDecimal("1500.50"), response.balance());
+    }
+
+    @Test
+    void shouldReturnNullWhenAccountBalanceIsNull() {
+        AccountBalanceResponse response = accountMapper.mapToBalanceResponse(null);
+
+        assertNull(response);
     }
 }

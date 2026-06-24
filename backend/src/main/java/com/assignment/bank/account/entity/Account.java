@@ -28,7 +28,7 @@ public class Account extends BaseEntity {
     private Currency currency;
 
     @Builder.Default
-    @Column(nullable = false, precision = 19, scale = 4)
+    @Column(nullable = false, precision = 19, scale = 8)
     private BigDecimal balance = BigDecimal.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,4 +38,5 @@ public class Account extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaction> transactions = new ArrayList<>();
+
 }

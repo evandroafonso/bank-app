@@ -7,6 +7,7 @@ import com.assignment.bank.exception.CurrencyMismatchException;
 import com.assignment.bank.exception.InsufficientBalanceException;
 import com.assignment.bank.exception.NotFoundException;
 import com.assignment.bank.security.AuthenticatedUserProvider;
+import com.assignment.bank.transaction.dto.BalanceChartPointResponse;
 import com.assignment.bank.transaction.dto.TransactionRequest;
 import com.assignment.bank.transaction.dto.TransactionResponse;
 import com.assignment.bank.transaction.entity.Transaction;
@@ -19,9 +20,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -208,7 +216,7 @@ class TransactionServiceTest {
         Account account = Account.builder().currency(Currency.EUR).balance(new BigDecimal("500.00")).build();
 
         when(accountRepository.findByIbanAndOwner("EE382200221020145685", user)).thenReturn(Optional.of(account));
-        doThrow(new com.assignment.bank.exception.FraudDetectedException("fraud")).when(fraudDetectorService).check(any());
+        doThrow(new com.assignment.bank.exception.FraudDetectedException("fraud")).when(fraudDetectorService).check(any(), any());
 
         assertThrows(com.assignment.bank.exception.FraudDetectedException.class, () -> transactionService.debit(request));
 
@@ -264,5 +272,72 @@ class TransactionServiceTest {
         when(transactionMapper.mapToResponse(savedTransaction)).thenReturn(mock(TransactionResponse.class));
 
         assertDoesNotThrow(() -> transactionService.credit(request));
+    }
+
+    @Test
+    void shouldGetHistorySuccessfully() {
+        String iban = "EE382200221020145685";
+        Pageable pageable = PageRequest.of(0, 10);
+        Account account = Account.builder().build();
+        User user = mock(User.class);
+        Transaction transaction = mock(Transaction.class);
+        TransactionResponse response = mock(TransactionResponse.class);
+
+        when(authenticatedUserProvider.get()).thenReturn(user);
+        when(accountRepository.findByIbanAndOwner(iban, user)).thenReturn(Optional.of(account));
+        when(transactionRepository.findByAccountOrderByCreatedAtDesc(account, pageable))
+                .thenReturn(new PageImpl<>(List.of(transaction)));
+        when(transactionMapper.mapToResponse(transaction)).thenReturn(response);
+
+        Page<TransactionResponse> result = transactionService.getHistory(iban, pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(authenticatedUserProvider).get();
+        verify(accountRepository).findByIbanAndOwner(iban, user);
+        verify(transactionRepository).findByAccountOrderByCreatedAtDesc(account, pageable);
+    }
+
+    @Test
+    void shouldGetTransactionSuccessfully() {
+        UUID uuid = UUID.randomUUID();
+        Transaction transaction = mock(Transaction.class);
+        TransactionResponse response = mock(TransactionResponse.class);
+
+        when(transactionRepository.findByUuid(uuid)).thenReturn(Optional.of(transaction));
+        when(transactionMapper.mapToResponse(transaction)).thenReturn(response);
+
+        TransactionResponse result = transactionService.getTransaction(uuid);
+
+        assertNotNull(result);
+        verify(transactionRepository).findByUuid(uuid);
+        verify(transactionMapper).mapToResponse(transaction);
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenTransactionDoesNotExist() {
+        UUID uuid = UUID.randomUUID();
+        when(transactionRepository.findByUuid(uuid)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> transactionService.getTransaction(uuid));
+    }
+
+    @Test
+    void shouldGetBalanceChartDataSuccessfully() {
+        String iban = "EE382200221020145685";
+        LocalDateTime start = LocalDateTime.now().minusDays(1);
+        LocalDateTime end = LocalDateTime.now();
+        Transaction transaction = mock(Transaction.class);
+
+        when(transaction.getCreatedAt()).thenReturn(end.minusHours(1));
+        when(transaction.getBalanceAfter()).thenReturn(new BigDecimal("100.00"));
+        when(transactionRepository.findByAccount_IbanAndCreatedAtBetweenOrderByCreatedAtAsc(iban, start, end))
+                .thenReturn(List.of(transaction));
+
+        List<BalanceChartPointResponse> result = transactionService.getBalanceChartData(iban, start, end);
+
+        assertEquals(1, result.size());
+        assertEquals(new BigDecimal("100.00"), result.get(0).balance());
+        verify(transactionRepository).findByAccount_IbanAndCreatedAtBetweenOrderByCreatedAtAsc(iban, start, end);
     }
 }
