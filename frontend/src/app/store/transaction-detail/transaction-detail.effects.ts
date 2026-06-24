@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { TransactionsService } from '../../services/transactions.service';
+import { getApiErrorMessage } from '../../utils/api-error.util';
 import {
   loadTransactionDetail,
   loadTransactionDetailFailure,
@@ -24,8 +25,12 @@ export class TransactionDetailEffects {
         switchMap(({ uuid }) =>
           this.transactionsService.getTransactionByUuid(uuid).pipe(
             map((transaction) => loadTransactionDetailSuccess({ transaction })),
-            catchError(() =>
-              of(loadTransactionDetailFailure({ error: 'Unable to load transaction details.' })),
+            catchError((error) =>
+              of(
+                loadTransactionDetailFailure({
+                  error: getApiErrorMessage(error, 'Unable to load transaction details.'),
+                }),
+              ),
             ),
           ),
         ),

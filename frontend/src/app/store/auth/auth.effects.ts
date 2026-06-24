@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { AuthService } from '../../services/auth.service';
+import { getApiErrorMessage } from '../../utils/api-error.util';
 import { login, loginSuccess, loginFailure, logout } from './auth.actions';
 
 @Injectable()
@@ -25,10 +26,12 @@ export class AuthEffects {
           this.authService.login(credentials).pipe(
             map((user) => loginSuccess({ user })),
             catchError((error) => {
-              const message =
+              const fallbackMessage =
                 error.status === 401
                   ? 'Invalid email or password.'
                   : 'Unable to connect to the server. Please try again.';
+              const message = getApiErrorMessage(error, fallbackMessage);
+
               return of(loginFailure({ error: message }));
             }),
           ),

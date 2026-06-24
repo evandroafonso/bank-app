@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { AccountsService } from '../../services/accounts.service';
+import { getApiErrorMessage } from '../../utils/api-error.util';
 import {
   loadAccountDetail,
   loadAccountDetailFailure,
@@ -24,8 +25,12 @@ export class AccountDetailEffects {
         switchMap(({ iban }) =>
           this.accountsService.getAccountByIban(iban).pipe(
             map((account) => loadAccountDetailSuccess({ account })),
-            catchError(() =>
-              of(loadAccountDetailFailure({ error: 'Unable to load account details.' })),
+            catchError((error) =>
+              of(
+                loadAccountDetailFailure({
+                  error: getApiErrorMessage(error, 'Unable to load account details.'),
+                }),
+              ),
             ),
           ),
         ),

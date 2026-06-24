@@ -4,6 +4,15 @@ import { Observable } from 'rxjs';
 import { Transaction, TransactionPage } from '../store/transactions/transactions.actions';
 import { AuthService } from './auth.service';
 
+export type TransactionOperationType = 'CREDIT' | 'DEBIT';
+
+export interface TransactionOperationRequest {
+  iban: string;
+  amount: number;
+  description: string;
+  currency: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -32,6 +41,18 @@ export class TransactionsService {
 
   getTransactionByUuid(uuid: string): Observable<Transaction> {
     return this.http.get<Transaction>(`${this.apiUrl}/${uuid}`, {
+      headers: this.getHeaders(),
+    });
+  }
+
+  creditAccount(payload: TransactionOperationRequest): Observable<Transaction> {
+    return this.http.post<Transaction>(`${this.apiUrl}/credit`, payload, {
+      headers: this.getHeaders(),
+    });
+  }
+
+  debitAccount(payload: TransactionOperationRequest): Observable<Transaction> {
+    return this.http.post<Transaction>(`${this.apiUrl}/debit`, payload, {
       headers: this.getHeaders(),
     });
   }

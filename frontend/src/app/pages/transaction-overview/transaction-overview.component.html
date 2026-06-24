@@ -15,47 +15,79 @@
       Back
     </button>
 
-    <div class="alert alert-error" *ngIf="error$ | async as error">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-        <line
-          x1="12"
-          y1="8"
-          x2="12"
-          y2="12"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-        <circle cx="12" cy="16" r="1" fill="currentColor" />
-      </svg>
-      {{ error }}
-    </div>
+    @if (error$ | async; as error) {
+      <div class="alert alert-error">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+          <line
+            x1="12"
+            y1="8"
+            x2="12"
+            y2="12"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <circle cx="12" cy="16" r="1" fill="currentColor" />
+        </svg>
+        {{ error }}
+      </div>
+    }
 
-    <ng-container *ngIf="loading$ | async">
+    @if (loading$ | async) {
       <div class="skeleton-block" style="height: 160px; margin-bottom: 20px"></div>
       <div class="skeleton-block" style="height: 220px"></div>
-    </ng-container>
-
-    <ng-container *ngIf="(loading$ | async) === false">
-      <ng-container *ngIf="transaction$ | async as tx">
+    } @else {
+      @if (transaction$ | async; as tx) {
         <div class="page-header">
           <div class="header-left">
-            <div class="tx-badge" [class.credit]="tx.type === 'CREDIT'" [class.debit]="tx.type === 'DEBIT'">
+            <div
+              class="tx-badge"
+              [class.credit]="tx.type === 'CREDIT'"
+              [class.debit]="tx.type === 'DEBIT'"
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <ng-container *ngIf="tx.type === 'CREDIT'">
-                  <line x1="12" y1="19" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                  <polyline points="5 12 12 5 19 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </ng-container>
-                <ng-container *ngIf="tx.type === 'DEBIT'">
-                  <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                  <polyline points="19 12 12 19 5 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </ng-container>
+                @if (tx.type === 'CREDIT') {
+                  <line
+                    x1="12"
+                    y1="19"
+                    x2="12"
+                    y2="5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <polyline
+                    points="5 12 12 5 19 12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                }
+                @if (tx.type === 'DEBIT') {
+                  <line
+                    x1="12"
+                    y1="5"
+                    x2="12"
+                    y2="19"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <polyline
+                    points="19 12 12 19 5 12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                }
               </svg>
             </div>
             <div>
               <p class="page-label">Transaction Overview</p>
-              <h1>{{ tx.description }}</h1>
+              <h1>{{ tx.description || 'No description available' }}</h1>
             </div>
           </div>
           <span class="currency-tag">{{ tx.currency }}</span>
@@ -63,7 +95,11 @@
 
         <div class="balance-hero">
           <div class="balance-label">Amount</div>
-          <div class="balance-amount" [class.credit]="tx.type === 'CREDIT'" [class.debit]="tx.type === 'DEBIT'">
+          <div
+            class="balance-amount"
+            [class.credit]="tx.type === 'CREDIT'"
+            [class.debit]="tx.type === 'DEBIT'"
+          >
             {{ tx.type === 'CREDIT' ? '+' : '-' }}{{ tx.sourceAmount | number: '1.2-4' }}
             <span class="balance-currency">{{ tx.currency }}</span>
           </div>
@@ -80,7 +116,7 @@
           </div>
           <div class="detail-card">
             <span class="detail-label">Timestamp</span>
-            <span class="detail-value">{{ formatDate(tx.timestamp) }}</span>
+            <span class="detail-value">{{ tx.timestamp ? formatDate(tx.timestamp) : '-' }}</span>
           </div>
           <div class="detail-card">
             <span class="detail-label">Balance</span>
@@ -88,26 +124,31 @@
           </div>
         </div>
 
-        <div class="detail-panel" *ngIf="hasCurrencyConversion(tx.currency, tx.targetCurrency)">
-          <h2>Conversion</h2>
-          <div class="detail-grid conversion-grid">
-            <div class="detail-card">
-              <span class="detail-label">Exchange Rate</span>
-              <span class="detail-value">
-                1 {{ tx.currency }} = {{ tx.exchangeRate | number: '1.2-4' }} {{ tx.targetCurrency }}
-              </span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-label">Converted Amount</span>
-              <span class="detail-value">{{ tx.convertedAmount | number: '1.2-2' }} {{ tx.targetCurrency }}</span>
-            </div>
-            <div class="detail-card">
-              <span class="detail-label">Target Currency</span>
-              <span class="detail-value">{{ tx.targetCurrency }}</span>
+        @if (hasCurrencyConversion(tx.currency, tx.targetCurrency)) {
+          <div class="detail-panel">
+            <h2>Conversion</h2>
+            <div class="detail-grid conversion-grid">
+              <div class="detail-card">
+                <span class="detail-label">Exchange Rate</span>
+                <span class="detail-value">
+                  1 {{ tx.currency }} = {{ tx.exchangeRate | number: '1.2-4' }}
+                  {{ tx.targetCurrency }}
+                </span>
+              </div>
+              <div class="detail-card">
+                <span class="detail-label">Converted Amount</span>
+                <span class="detail-value"
+                  >{{ tx.convertedAmount | number: '1.2-2' }} {{ tx.targetCurrency }}</span
+                >
+              </div>
+              <div class="detail-card">
+                <span class="detail-label">Target Currency</span>
+                <span class="detail-value">{{ tx.targetCurrency }}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </ng-container>
-    </ng-container>
+        }
+      }
+    }
   </main>
 </div>

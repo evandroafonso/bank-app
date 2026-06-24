@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { TransactionsService } from '../../services/transactions.service';
+import { getApiErrorMessage } from '../../utils/api-error.util';
 import {
   loadTransactions,
   loadTransactionsSuccess,
@@ -24,8 +25,12 @@ export class TransactionsEffects {
         switchMap(({ iban, page, size }) =>
           this.transactionsService.getTransactionHistory(iban, page, size).pipe(
             map((data) => loadTransactionsSuccess({ data })),
-            catchError(() =>
-              of(loadTransactionsFailure({ error: 'Unable to load transactions.' })),
+            catchError((error) =>
+              of(
+                loadTransactionsFailure({
+                  error: getApiErrorMessage(error, 'Unable to load transactions.'),
+                }),
+              ),
             ),
           ),
         ),

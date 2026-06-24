@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { AccountsService } from '../../services/accounts.service';
+import { getApiErrorMessage } from '../../utils/api-error.util';
 import { loadAccounts, loadAccountsSuccess, loadAccountsFailure } from './accounts.actions';
 
 @Injectable()
@@ -20,8 +21,15 @@ export class AccountsEffects {
         switchMap(() =>
           this.accountsService.getAccounts().pipe(
             map((accounts) => loadAccountsSuccess({ accounts })),
-            catchError(() =>
-              of(loadAccountsFailure({ error: 'Unable to load accounts. Please try again.' })),
+            catchError((error) =>
+              of(
+                loadAccountsFailure({
+                  error: getApiErrorMessage(
+                    error,
+                    'Unable to load accounts. Please try again.',
+                  ),
+                }),
+              ),
             ),
           ),
         ),
