@@ -3,6 +3,7 @@ package com.assignment.bank.exception.handler;
 import com.assignment.bank.exception.*;
 import com.assignment.bank.exception.model.ErrorCode;
 import com.assignment.bank.exception.model.ErrorResponse;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -83,12 +85,6 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body("Invalid or missing request body");
-    }
-
     @ExceptionHandler(InsufficientBalanceException.class)
     public ResponseEntity<ErrorResponse> handleInsufficientBalance(
             InsufficientBalanceException ex) {
@@ -119,6 +115,34 @@ public class GlobalExceptionHandler {
                         "Transaction could not be processed. Please contact support.",
                         ErrorCode.TRANSACTION_DENIED,
                         HttpStatus.FORBIDDEN
+                ));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        String message = "Invalid or missing request body";
+
+        Throwable cause = ex.getCause();
+        if (cause instanceof InvalidFormatException ife && ife.getTargetType().isEnum()) {
+            String fieldName = ife.getPath().isEmpty()
+                    ? "field"
+                    : ife.getPath().getLast().getFieldName();
+
+            Object[] validValues = ife.getTargetType().getEnumConstants();
+
+            message = String.format(
+                    "Invalid value '%s' for field '%s'. Accepted values: %s",
+                    ife.getValue(),
+                    fieldName,
+                    Arrays.toString(validValues)
+            );
+        }
+
+        return ResponseEntity.badRequest()
+                .body(buildError(
+                        message,
+                        ErrorCode.VALIDATION_ERROR, // ou crie ErrorCode.MALFORMED_REQUEST
+                        HttpStatus.BAD_REQUEST
                 ));
     }
 }
