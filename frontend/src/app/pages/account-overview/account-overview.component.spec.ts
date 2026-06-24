@@ -12,12 +12,9 @@ import { CurrenciesService } from '../../services/currencies.service';
 import {
   clearAccountDetail,
   loadAccountDetail,
-} from '../../store/account-detail/account-detail.actions';
-import {
-  clearTransactions,
-  loadTransactions,
-} from '../../store/transactions/transactions.actions';
-import { selectAccountDetail } from '../../store/account-detail/account-detail.selectors';
+} from '../../store/account-overview/account-detail.actions';
+import { clearTransactions, loadTransactions } from '../../store/transactions/transactions.actions';
+import { selectAccountDetail } from '../../store/account-overview/account-detail.selectors';
 import { Account } from '../../store/accounts/accounts.actions';
 import { SmartCurrencyPipe } from '../../pipes/smart-currency-pipe';
 
@@ -68,8 +65,9 @@ describe('AccountOverviewComponent', () => {
   let currenciesService: { getCurrencies: jest.Mock };
 
   beforeEach(async () => {
-    (global as unknown as { IntersectionObserver: typeof IntersectionObserver }).IntersectionObserver =
-      IntersectionObserverMock as unknown as typeof IntersectionObserver;
+    (
+      global as unknown as { IntersectionObserver: typeof IntersectionObserver }
+    ).IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
 
     transactionsService = {
       getBalanceChart: jest.fn().mockReturnValue(of([])),
@@ -419,8 +417,11 @@ describe('AccountOverviewComponent', () => {
         disconnect: jest.fn(),
       };
 
-      (global as unknown as { IntersectionObserver: typeof IntersectionObserver }).IntersectionObserver =
-        jest.fn().mockImplementation(() => observerInstance) as unknown as typeof IntersectionObserver;
+      (
+        global as unknown as { IntersectionObserver: typeof IntersectionObserver }
+      ).IntersectionObserver = jest
+        .fn()
+        .mockImplementation(() => observerInstance) as unknown as typeof IntersectionObserver;
 
       component.scrollSentinel = {
         nativeElement: document.createElement('div'),

@@ -2,14 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "moduleResolution": "bundler", 
-    "types": [
-      "jest", 
-      "node"
-    ]
+    "moduleResolution": "bundler",
+    "rootDir": "src",
+    "types": ["jest", "node"]
   },
-  "include": [
-    "src/**/*.spec.ts",
-    "src/**/*.d.ts"
-  ]
+  "include": ["src/**/*.spec.ts", "src/**/*.d.ts"]
 }

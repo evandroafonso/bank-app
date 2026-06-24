@@ -24,13 +24,13 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import {
   loadAccountDetail,
   clearAccountDetail,
-} from '../../store/account-detail/account-detail.actions';
+} from '../../store/account-overview/account-detail.actions';
 
 import {
   selectAccountDetail,
   selectAccountDetailLoading,
   selectAccountDetailError,
-} from '../../store/account-detail/account-detail.selectors';
+} from '../../store/account-overview/account-detail.selectors';
 
 import { Account } from '../../store/accounts/accounts.actions';
 
@@ -367,10 +367,14 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
     const bMax = Math.max(...balances);
 
     const xFor = (t: number) =>
-      tMax === tMin ? plotLeft + plotWidth / 2 : plotLeft + ((t - tMin) / (tMax - tMin)) * plotWidth;
+      tMax === tMin
+        ? plotLeft + plotWidth / 2
+        : plotLeft + ((t - tMin) / (tMax - tMin)) * plotWidth;
 
     const yFor = (b: number) =>
-      bMax === bMin ? plotTop + plotHeight / 2 : plotTop + (1 - (b - bMin) / (bMax - bMin)) * plotHeight;
+      bMax === bMin
+        ? plotTop + plotHeight / 2
+        : plotTop + (1 - (b - bMin) / (bMax - bMin)) * plotHeight;
 
     const points = data.map((d) => {
       const balance = Number(d.balance);
