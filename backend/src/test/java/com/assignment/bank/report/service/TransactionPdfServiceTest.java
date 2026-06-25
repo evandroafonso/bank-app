@@ -20,15 +20,14 @@ class TransactionPdfServiceTest {
 
     @Test
     void shouldGeneratePdfSuccessfully() {
-
         TransactionReportItemResponse item = new TransactionReportItemResponse(
                 UUID.randomUUID(),
-                new BigDecimal("100.0000"),
-                new BigDecimal("100.0000"),
+                new BigDecimal("100.0044"),
+                new BigDecimal("100.0055"),
                 new BigDecimal("1.0000"),
                 "EUR",
                 "EUR",
-                new BigDecimal("500.0000"),
+                new BigDecimal("500.9999"),
                 "CREDIT",
                 "Test transaction",
                 LocalDateTime.now()
@@ -41,16 +40,15 @@ class TransactionPdfServiceTest {
     }
 
     @Test
-    void shouldGeneratePdfEvenWithNullDescription() {
-
+    void shouldGeneratePdfEvenWithNullOptionalFields() {
         TransactionReportItemResponse item = new TransactionReportItemResponse(
                 UUID.randomUUID(),
-                new BigDecimal("100.0000"),
-                new BigDecimal("100.0000"),
-                new BigDecimal("1.0000"),
+                new BigDecimal("100.00"),
+                null,
+                null,
                 "EUR",
-                "EUR",
-                new BigDecimal("500.0000"),
+                null,
+                new BigDecimal("500.00"),
                 "CREDIT",
                 null,
                 LocalDateTime.now()
@@ -64,30 +62,25 @@ class TransactionPdfServiceTest {
 
     @Test
     void shouldThrowRuntimeExceptionWhenPdfFails() {
-
         TransactionReportItemResponse item = new TransactionReportItemResponse(
-                UUID.randomUUID(),
-                new BigDecimal("100.0000"),
-                new BigDecimal("100.0000"),
-                new BigDecimal("1.0000"),
+                null,
+                new BigDecimal("100.00"),
+                new BigDecimal("100.00"),
+                new BigDecimal("1.00"),
                 "EUR",
                 "EUR",
-                new BigDecimal("500.0000"),
+                new BigDecimal("500.00"),
                 "CREDIT",
                 "Test",
                 LocalDateTime.now()
         );
 
-        TransactionPdfService serviceSpy = org.mockito.Mockito.spy(transactionPdfService);
-
-        org.mockito.Mockito.doThrow(new RuntimeException("PDF error"))
-                .when(serviceSpy).generatePdf(item);
-
         RuntimeException ex = assertThrows(
                 RuntimeException.class,
-                () -> serviceSpy.generatePdf(item)
+                () -> transactionPdfService.generatePdf(item)
         );
 
-        assertEquals("PDF error", ex.getMessage());
+        assertEquals("Error generating PDF", ex.getMessage());
+        assertNotNull(ex.getCause());
     }
 }

@@ -183,7 +183,7 @@ export class AccountOverviewComponent implements OnInit, AfterViewInit, OnDestro
 
       currency: ['', Validators.required],
 
-      description: ['', [Validators.minLength(3), Validators.maxLength(120)]],
+      description: ['', [Validators.maxLength(255)]],
     });
 
     this.account$ = this.store.select(selectAccountDetail);

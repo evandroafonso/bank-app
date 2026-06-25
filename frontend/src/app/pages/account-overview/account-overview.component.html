@@ -186,13 +186,20 @@
             </div>
 
             <label class="field">
-              <span>Description <small style="font-weight: normal; color: #888"></small></span>
+              <span>
+                Description
+                <small style="font-weight: normal; color: #888">
+                  ({{ operationForm.get('description')?.value?.length || 0 }}/255)
+                </small>
+              </span>
               <input
                 type="text"
                 formControlName="description"
-                maxlength="120"
                 placeholder="Enter a description (optional)"
               />
+              <small class="field-hint error" *ngIf="operationForm.get('description')?.invalid">
+                Description must be at most 255 characters
+              </small>
             </label>
 
             <div class="operation-actions">

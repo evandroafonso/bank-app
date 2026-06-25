@@ -15,6 +15,7 @@ import com.assignment.bank.transaction.enums.TransactionType;
 import com.assignment.bank.transaction.mapper.TransactionMapper;
 import com.assignment.bank.transaction.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class TransactionService {
 
@@ -52,11 +54,13 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse credit(TransactionRequest request) {
+        log.info("Processing credit transaction for IBAN: {}", request.iban());
         return processTransaction(request, TransactionType.CREDIT);
     }
 
     @Transactional
     public TransactionResponse debit(TransactionRequest request) {
+        log.info("Processing debit transaction for IBAN: {}", request.iban());
         return processTransaction(request, TransactionType.DEBIT);
     }
 
@@ -77,6 +81,7 @@ public class TransactionService {
                 request, account, type, newBalance, convertedAmount, exchangeRate
         );
 
+        log.info("Saving transaction of type {} for IBAN: {}", type, request.iban());
         return transactionMapper.mapToResponse(transactionRepository.save(transaction));
     }
 
@@ -99,6 +104,7 @@ public class TransactionService {
 
     private void validateCurrencyMatch(Currency requestCurrency, Currency accountCurrency) {
         if (requestCurrency != accountCurrency) {
+            log.warn("Currency mismatch. Expected: {}, Got: {}", accountCurrency, requestCurrency);
             throw new CurrencyMismatchException(
                     "Debit currency must match account currency. Expected: " + accountCurrency + ", got: " + requestCurrency
             );
@@ -108,6 +114,7 @@ public class TransactionService {
 
     private void validateSufficientBalance(Account account, BigDecimal amount) {
         if (account.getBalance().compareTo(amount) < 0) {
+            log.warn("Insufficient balance for IBAN: {}. Available: {}, Required: {}", account.getIban(), account.getBalance(), amount);
             throw new InsufficientBalanceException("Insufficient balance");
         }
     }
@@ -127,36 +134,48 @@ public class TransactionService {
 
     private @NonNull Account getAccount(String iban) {
         return accountRepository.findByIbanAndOwner(iban, authenticatedUserProvider.get())
-                .orElseThrow(() -> new NotFoundException("Account with iban " + iban + " not found"));
+                .orElseThrow(() -> {
+                    log.warn("Account with iban {} not found for the authenticated user", iban);
+                    return new NotFoundException("Account with iban " + iban + " not found");
+                });
     }
 
     private void validateAmount(BigDecimal amount) {
         if (amount == null) {
+            log.warn("Amount validation failed: value is null");
             throw new IllegalArgumentException("Amount cannot be null");
         }
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Amount validation failed: value {} must be greater than zero", amount);
             throw new IllegalArgumentException("Amount must be greater than zero");
         }
 
         if (amount.scale() > 4) {
+            log.warn("Amount validation failed: value {} cannot have more than 4 decimal places", amount);
             throw new IllegalArgumentException("Amount cannot have more than 4 decimal places");
         }
     }
 
     public Page<TransactionResponse> getHistory(String iban, Pageable pageable) {
+        log.info("Fetching transaction history for IBAN: {}", iban);
         Account account = getAccount(iban);
         return transactionRepository.findByAccountOrderByCreatedAtDesc(account, pageable)
                 .map(transactionMapper::mapToResponse);
     }
 
     public TransactionResponse getTransaction(UUID uuid) {
+        log.info("Fetching transaction with UUID: {}", uuid);
         Transaction transaction = transactionRepository.findByUuid(uuid)
-                .orElseThrow(() -> new NotFoundException("Transaction with uuid " + uuid + " not found"));
+                .orElseThrow(() -> {
+                    log.warn("Transaction with uuid {} not found", uuid);
+                    return new NotFoundException("Transaction with uuid " + uuid + " not found");
+                });
         return transactionMapper.mapToResponse(transaction);
     }
 
     public List<BalanceChartPointResponse> getBalanceChartData(String iban, LocalDateTime start, LocalDateTime end) {
+        log.info("Fetching balance chart data for IBAN: {} from {} to {}", iban, start, end);
         List<Transaction> transactions = transactionRepository.findByAccount_IbanAndCreatedAtBetweenOrderByCreatedAtAsc(iban, start, end);
 
         return transactions.stream()

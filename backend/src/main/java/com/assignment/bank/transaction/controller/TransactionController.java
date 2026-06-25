@@ -4,6 +4,7 @@ import com.assignment.bank.transaction.dto.BalanceChartPointResponse;
 import com.assignment.bank.transaction.dto.TransactionRequest;
 import com.assignment.bank.transaction.dto.TransactionResponse;
 import com.assignment.bank.transaction.service.TransactionService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -25,13 +26,13 @@ public class TransactionController {
     }
 
     @PostMapping("/credit")
-    public ResponseEntity<TransactionResponse> credit(@RequestBody TransactionRequest transactionRequest) {
+    public ResponseEntity<TransactionResponse> credit(@RequestBody @Valid TransactionRequest transactionRequest) {
         TransactionResponse response = transactionService.credit(transactionRequest);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/debit")
-    public ResponseEntity<TransactionResponse> debit(@RequestBody TransactionRequest transactionRequest) {
+    public ResponseEntity<TransactionResponse> debit(@RequestBody @Valid TransactionRequest transactionRequest) {
         TransactionResponse response = transactionService.debit(transactionRequest);
         return ResponseEntity.ok(response);
     }

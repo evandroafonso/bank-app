@@ -34,16 +34,16 @@ public class Transaction extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Currency targetCurrency;
 
-    @Column(name = "source_amount", nullable = false, precision = 19, scale = 8)
+    @Column(name = "source_amount", nullable = false, precision = 20, scale = 8)
     private BigDecimal sourceAmount;
 
-    @Column(name = "converted_amount", nullable = false, precision = 19, scale = 8)
+    @Column(name = "converted_amount", nullable = false, precision = 20, scale = 8)
     private BigDecimal convertedAmount;
 
-    @Column(name = "exchange_rate", nullable = false, precision = 19, scale = 8)
+    @Column(name = "exchange_rate", nullable = false, precision = 20, scale = 8)
     private BigDecimal exchangeRate;
 
-    @Column(name = "balance_after", nullable = false, precision = 19, scale = 8)
+    @Column(name = "balance_after", nullable = false, precision = 20, scale = 8)
     private BigDecimal balanceAfter;
 
     @Enumerated(EnumType.STRING)

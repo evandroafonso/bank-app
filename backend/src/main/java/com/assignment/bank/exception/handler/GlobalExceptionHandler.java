@@ -3,7 +3,6 @@ package com.assignment.bank.exception.handler;
 import com.assignment.bank.exception.*;
 import com.assignment.bank.exception.model.ErrorCode;
 import com.assignment.bank.exception.model.ErrorResponse;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -11,6 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -52,16 +52,18 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
-        var errors = ex.getFieldErrors()
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
+        String message = ex.getFieldErrors()
                 .stream()
-                .map(err -> new com.assignment.bank.exception.model.FieldErrorResponse(
-                        err.getField(),
-                        err.getDefaultMessage()
-                ))
-                .toList();
+                .map(err -> err.getDefaultMessage())
+                .collect(java.util.stream.Collectors.joining("; "));
 
-        return ResponseEntity.badRequest().body(errors);
+        return ResponseEntity.badRequest()
+                .body(buildError(
+                        message,
+                        ErrorCode.VALIDATION_ERROR,
+                        HttpStatus.BAD_REQUEST
+                ));
     }
 
     @ExceptionHandler(Exception.class)
@@ -120,29 +122,40 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        String message = "Invalid or missing request body";
-
+        String message = "Malformed JSON request";
         Throwable cause = ex.getCause();
-        if (cause instanceof InvalidFormatException ife && ife.getTargetType().isEnum()) {
+        if (cause instanceof InvalidFormatException ife) {
             String fieldName = ife.getPath().isEmpty()
                     ? "field"
-                    : ife.getPath().getLast().getFieldName();
+                    : ife.getPath().getLast().getPropertyName();
 
-            Object[] validValues = ife.getTargetType().getEnumConstants();
-
-            message = String.format(
-                    "Invalid value '%s' for field '%s'. Accepted values: %s",
-                    ife.getValue(),
-                    fieldName,
-                    Arrays.toString(validValues)
-            );
+            if (ife.getTargetType().isEnum()) {
+                Object[] validValues = ife.getTargetType().getEnumConstants();
+                message = String.format(
+                        "Invalid value '%s' for field '%s'. Accepted values: %s",
+                        ife.getValue(),
+                        fieldName,
+                        Arrays.toString(validValues)
+                );
+            } else if (Number.class.isAssignableFrom(ife.getTargetType())
+                    || ife.getTargetType().isPrimitive()) {
+                message = String.format(
+                        "Invalid numeric value for field '%s'. The value is out of range or improperly formatted.",
+                        fieldName
+                );
+            } else {
+                message = String.format(
+                        "Invalid value for field '%s'.",
+                        fieldName
+                );
+            }
         }
-
         return ResponseEntity.badRequest()
                 .body(buildError(
                         message,
-                        ErrorCode.VALIDATION_ERROR, // ou crie ErrorCode.MALFORMED_REQUEST
+                        ErrorCode.VALIDATION_ERROR,
                         HttpStatus.BAD_REQUEST
                 ));
     }
+
 }

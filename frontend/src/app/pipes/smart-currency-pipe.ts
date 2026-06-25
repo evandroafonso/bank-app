@@ -16,9 +16,16 @@ export class SmartCurrencyPipe implements PipeTransform {
       return num.toString();
     }
 
+    const truncated = this.truncateToDecimals(num, 2);
+
     return new Intl.NumberFormat('de-DE', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(num);
+    }).format(truncated);
+  }
+
+  private truncateToDecimals(value: number, decimals: number): number {
+    const factor = Math.pow(10, decimals);
+    return Math.trunc(value * factor) / factor;
   }
 }

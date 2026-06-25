@@ -1,11 +1,13 @@
 package com.assignment.bank.transaction.service;
 
 import com.assignment.bank.account.enums.Currency;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class ExchangeRateProvider {
 
@@ -37,7 +39,10 @@ public class ExchangeRateProvider {
     );
 
     public BigDecimal getRate(Currency source, Currency target) {
+        log.debug("Fetching exchange rate for conversion: {} -> {}", source, target);
+
         if (source == target) {
+            log.debug("Source and target currencies are the same ({}). Rate is 1", source);
             return BigDecimal.ONE;
         }
 
@@ -45,9 +50,11 @@ public class ExchangeRateProvider {
         BigDecimal rate = RATES.get(key);
 
         if (rate == null) {
+            log.warn("Exchange rate conversion not supported: {} -> {}", source, target);
             throw new IllegalArgumentException("Unsupported conversion: " + source + " -> " + target);
         }
 
+        log.debug("Exchange rate for {} -> {} is {}", source, target, rate);
         return rate;
     }
 }
