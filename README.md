@@ -2,7 +2,7 @@
 
 Homework assignment — Software Developer (Full Stack, Backend Focus) – Swedbank
 
-A complete banking application developed as a technical assignment, split into two parts as requested: **Part 1** — a REST API in Java/Spring Boot for banking operations, and **Part 2** — an Angular SPA that consumes that API.
+A bank application developed as a technical assignment, split into two parts as requested: **Part 1** — a REST API in Java/Spring Boot for banking operations, and **Part 2** — an Angular SPA that consumes that API.
 
 ## Table of Contents
 
