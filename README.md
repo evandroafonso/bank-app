@@ -17,7 +17,6 @@ A bank application developed as a technical assignment, split into two parts as 
 9. [REST API — quick reference](#rest-api--quick-reference)
 10. [Architecture and technical decisions](#architecture-and-technical-decisions)
 11. [Common issues](#common-issues)
-12. [Suggested live demo walkthrough](#suggested-live-demo-walkthrough)
 
 ---
 
@@ -635,16 +634,3 @@ bank-app/
 | Java version error             | The project requires **Java 25**. Check with `java -version`.              |
 
 ---
-
-## Suggested live demo walkthrough
-
-1. Start backend and frontend (`docker compose up --build` or manually).
-2. Log in with `john@email.com` / `123456`.
-3. On the Home page, show the two EUR accounts.
-4. Open `EE382200221020145685` — infinite scroll in the history, balance chart.
-5. Make a **credit** in USD (show automatic currency conversion).
-6. Make a **debit** in EUR (show blocking when currency is different).
-7. Show the external system call simulation before the debit (log/console).
-8. Click a transaction → download the PDF receipt.
-9. (Optional) Open the H2 Console and run a `SELECT` on transactions, showing SQL persistence.
-10. (Optional) Show the NgRx store structure in the frontend.
