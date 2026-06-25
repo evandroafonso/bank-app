@@ -160,6 +160,63 @@ docker compose down
 | Node.js    | **20+**                             |
 | npm        | 11+                                 |
 
+To run the application locally for development, follow the steps below to start the backend and frontend separately.
+
+---
+
+#### 1. Running the Backend (via IDE)
+
+You can run the backend Spring Boot application using either IntelliJ IDEA or Eclipse (Spring Tool Suite).
+
+**Via IntelliJ IDEA (Recommended)**
+
+1. Open IntelliJ IDEA and select **File > Open**.
+2. Navigate to your project directory, select the backend root folder (containing the `pom.xml` file), and click **OK**.
+3. Wait for IntelliJ to import the Maven dependencies.
+4. Locate the main application class (the one annotated with `@SpringBootApplication`, usually named `Application.java` or `BankAppApplication.java`).
+5. Right-click the file or inside the main method and select **Run 'Application.main()'** (or click the green Play button in the top toolbar).
+
+**Via Eclipse / Spring Tool Suite (STS)**
+
+1. Open Eclipse and go to **File > Import...**
+2. Select **Maven > Existing Maven Projects** and click **Next**.
+3. Browse to the root directory containing the backend `pom.xml` and click **Finish**.
+4. Once the project builds, right-click the project root in the Project Explorer.
+5. Select **Run As > Spring Boot App** (or **Run As > Java Application** and select your main class).
+
+---
+
+#### 2. Running the Frontend (via Angular CLI)
+
+Before running the development server, ensure your Node.js and npm versions meet the minimum requirements.
+
+1. Open your terminal or command prompt.
+2. Navigate to the frontend directory:
+
+```bash
+   cd path/to/your/frontend-folder
+```
+
+3. Install the project dependencies (only needed the first time or when `package.json` changes):
+
+```bash
+   npm install
+```
+
+4. Start the local development server using `ng serve`:
+
+```bash
+   npx ng serve
+```
+
+> **Note:** If you have the Angular CLI installed globally (`npm install -g @angular/cli`), you can simply run `ng serve`. Using `npx ng serve` ensures it runs correctly using the project's local version.
+
+5. Once compilation is complete, open your browser and navigate to:
+
+```
+   http://localhost:4200/
+```
+
 ## First access
 
 ### Pre-registered users (seed)
