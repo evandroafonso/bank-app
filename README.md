@@ -50,9 +50,8 @@ Frontend features (Part 2):
 
 ---
 
-### Class diagram
+### Class diag
 
-C:\Users\eafon\OneDrive\Documentos\desenvolvimento\assigment\bank-app\readme-images\bank_architecture_diagram.jpg
 ![alt text](readme-images/bank_class_diagram.jpg)
 
 ### Database diagram
