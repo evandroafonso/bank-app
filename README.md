@@ -48,7 +48,7 @@ Frontend features (Part 2):
 
 ---
 
-### Class diag
+### Class diagram
 
 ![alt text](readme-images/bank_class_diagram.jpg)
 
