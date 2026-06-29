@@ -46,8 +46,6 @@ Frontend features (Part 2):
 - **Transaction Overview Page:** details of the selected transaction; button to **export and download the receipt as PDF**.
 - **NgRx** for state management
 
-> Note from the challenge: the focus was on functionality, not aesthetics — the interface is functional, without investment in refined visual design.
-
 ---
 
 ### Class diag
